@@ -2,9 +2,9 @@
   <aside class="rounded-lg border border-slate-200 bg-white p-5">
     <div class="flex items-start justify-between gap-3">
       <div>
-        <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#de5826]">
+        <h6 class="text-[0.8rem] font-semibold uppercase tracking-[0.18em] text-[#de5826]">
           {{ config.label }}
-        </p>
+        </h6>
         <h2 class="mt-2 text-xl font-black text-[#094b7b]">
           {{ isEditing ? 'Rediger post' : 'Opret post' }}
         </h2>
@@ -26,7 +26,7 @@
         {{ field.label }}
         <div v-if="field.type === 'image'" class="grid gap-2">
           <input
-            class="rounded-md border border-slate-300 px-3 py-2 font-normal"
+            class="block w-full text-sm text-slate-700 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-[#094b7b] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
             type="file"
             accept="image/png,image/jpeg,image/jpg,image/webp"
             :required="field.required && !stringField(field.key)"
@@ -50,7 +50,7 @@
         </div>
         <div v-else-if="field.type === 'image-list'" class="grid gap-2">
           <input
-            class="rounded-md border border-slate-300 px-3 py-2 font-normal"
+            class="block w-full text-sm text-slate-700 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-[#094b7b] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
             type="file"
             multiple
             accept="image/png,image/jpeg,image/jpg,image/webp"
@@ -77,6 +77,15 @@
               </button>
             </div>
           </div>
+        </div>
+        <div v-else-if="field.type === 'slug-picker'">
+          <CategorySlugPicker
+            :model-value="arrayField(field.key)"
+            :options="categoryOptions"
+            :label="field.label"
+            placeholder="Søg eller opret kategori"
+            @update:model-value="setArrayField(field.key, $event)"
+          />
         </div>
         <textarea
           v-else-if="field.type === 'textarea'"
@@ -117,9 +126,6 @@
             setTextLikeField(field.key, field.type, ($event.target as HTMLInputElement).value)
           "
         />
-        <span v-if="field.type === 'tags'" class="text-xs font-medium text-slate-500">
-          Adskil værdier med komma.
-        </span>
         <span v-if="isFieldUploading(field.key)" class="text-xs font-bold text-[#094b7b]">
           Uploader billede...
         </span>
@@ -144,6 +150,7 @@
 
 <script setup lang="ts">
 import { toRefs } from 'vue'
+import CategorySlugPicker from '@/components/CategorySlugPicker.vue'
 import { useAdminRecordForm } from '@/composables/admin/useAdminRecordForm'
 import { resolveApiAssetUrl } from '@/constants/config'
 import type { AdminCollectionConfig, AdminEditableRecord } from '@/types/admin'
@@ -166,12 +173,14 @@ const { errorMessage } = toRefs(props)
 const {
   arrayField,
   booleanField,
+  categoryOptions,
   dateField,
   displayErrorMessage,
   isFieldUploading,
   isUploading,
   numberField,
   removeImageFromList,
+  setArrayField,
   setBooleanField,
   setNumberField,
   setStringField,

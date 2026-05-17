@@ -154,9 +154,9 @@
               role="menu"
             >
               <div class="border-b border-[#094b7b]/8 bg-[#FFF] px-5 py-4">
-                <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-[#de5826]">
+                <h6 class="text-[0.8rem] font-semibold uppercase tracking-[0.24em] text-[#de5826]">
                   Min konto
-                </p>
+                </h6>
                 <p class="mt-1 text-sm font-semibold text-[#094b7b]">{{ displayUserName }}</p>
               </div>
 

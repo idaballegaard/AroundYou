@@ -2,7 +2,7 @@
   <main class="min-h-screen bg-[#eef4f7] px-4 py-8">
     <section class="mx-auto grid max-w-7xl gap-6">
       <header class="rounded-lg border border-slate-200 bg-white p-6">
-        <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#de5826]">Adminpanel</p>
+        <h6 class="text-[0.8rem] font-semibold uppercase tracking-[0.18em] text-[#de5826]">Adminpanel</h6>
         <div class="mt-3 flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 class="text-3xl font-black tracking-tight text-[#094b7b]">Indholdskontrol</h1>

@@ -1,6 +1,7 @@
-import { computed, ref, type Ref } from 'vue'
+import { computed, onMounted, ref, type Ref } from 'vue'
 
 import { uploadImageFile } from '@/api/contentApi'
+import { fetchAttractions, fetchEvents } from '@/api/searchApi'
 import type { AdminEditableRecord, AdminFieldType } from '@/types/admin'
 import { compressImageFile } from '@/utils/imageCompressor'
 import {
@@ -18,6 +19,26 @@ import {
 export function useAdminRecordForm(form: Ref<AdminEditableRecord>, errorMessage: Ref<string>) {
   const uploadError = ref('')
   const uploadingFields = ref<string[]>([])
+  const categoryOptions = ref<string[]>([])
+
+  const fetchCategoryOptions = async () => {
+    try {
+      const [events, attractions] = await Promise.all([fetchEvents(), fetchAttractions()])
+      const unique = new Set(
+        [...events, ...attractions]
+          .flatMap((item) => (item as { slugArray?: string[] }).slugArray ?? [])
+          .map((slug) => slug.trim().toLowerCase())
+          .filter(Boolean),
+      )
+      categoryOptions.value = Array.from(unique).sort()
+    } catch {
+      // silently ignore
+    }
+  }
+
+  onMounted(() => {
+    void fetchCategoryOptions()
+  })
 
   const isUploading = computed(() => uploadingFields.value.length > 0)
   const displayErrorMessage = computed(() => uploadError.value || errorMessage.value)
@@ -128,15 +149,21 @@ export function useAdminRecordForm(form: Ref<AdminEditableRecord>, errorMessage:
     form.value[key] = arrayField(key).filter((_, imageIndex) => imageIndex !== index)
   }
 
+  function setArrayField(key: string, value: string[]): void {
+    form.value[key] = value
+  }
+
   return {
     arrayField,
     booleanField,
+    categoryOptions,
     dateField,
     displayErrorMessage,
     isFieldUploading,
     isUploading,
     numberField,
     removeImageFromList,
+    setArrayField,
     setBooleanField,
     setNumberField,
     setStringField,

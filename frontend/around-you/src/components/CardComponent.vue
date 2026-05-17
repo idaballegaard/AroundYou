@@ -14,7 +14,7 @@
     </div>
 
     <div class="p-3">
-      <p class="text-sm font-semibold text-[#094b7b]">{{ card.name }}</p>
+      <h6 class="text-sm text-[#094b7b]">{{ card.name }}</h6>
       <p :class="descriptionClass">{{ card.description }}</p>
 
       <div class="mt-1 flex items-center gap-1">
@@ -46,6 +46,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
+import { getReviewsByTarget } from '@/api/reviews.api'
 import {
   getCardComponentClass,
   getCardComponentDescriptionClass,
@@ -71,13 +72,63 @@ const props = withDefaults(
   },
 )
 
+type ReviewSummary = {
+  rating: number
+  reviews: number
+}
+
+const reviewSummaryCache = new Map<string, ReviewSummary>()
+const pendingReviewSummaryCache = new Map<string, Promise<ReviewSummary>>()
+
+const isReviewBackedCard = (href?: string) => {
+  if (!href) {
+    return false
+  }
+
+  return href.startsWith('/city/') || href.startsWith('/event/') || href.startsWith('/attraction/')
+}
+
+const getReviewSummary = async (targetId: string): Promise<ReviewSummary> => {
+  const cachedSummary = reviewSummaryCache.get(targetId)
+
+  if (cachedSummary) {
+    return cachedSummary
+  }
+
+  const pendingSummary = pendingReviewSummaryCache.get(targetId)
+
+  if (pendingSummary) {
+    return pendingSummary
+  }
+
+  const summaryPromise = getReviewsByTarget(targetId)
+    .then((reviews) => {
+      const summary: ReviewSummary = {
+        rating: reviews.length
+          ? reviews.reduce((accumulator, review) => accumulator + review.rating, 0) / reviews.length
+          : Number.NaN,
+        reviews: reviews.length,
+      }
+
+      reviewSummaryCache.set(targetId, summary)
+      return summary
+    })
+    .finally(() => {
+      pendingReviewSummaryCache.delete(targetId)
+    })
+
+  pendingReviewSummaryCache.set(targetId, summaryPromise)
+
+  return summaryPromise
+}
+
 const imageFailed = ref(false)
+const displayRating = ref(0)
+const displayReviewsCount = ref(0)
 
 const cardClass = computed(() => getCardComponentClass(props.variant, props.surface))
 const imageClass = computed(() => getCardComponentImageClass())
 const fallbackClass = computed(() => getCardComponentFallbackClass())
-const displayRating = computed(() => props.card.rating)
-const displayReviewsCount = computed(() => props.card.reviews)
 const descriptionClass = computed(() => getCardComponentDescriptionClass(props.surface))
 const metaClass = computed(() => getCardComponentMetaClass(props.surface))
 const tagClass = computed(() => getCardComponentTagClass(props.surface))
@@ -88,5 +139,33 @@ watch(
   () => {
     imageFailed.value = false
   },
+)
+
+watch(
+  () => ({
+    id: props.card.id,
+    href: props.card.href,
+    rating: props.card.rating,
+    reviews: props.card.reviews,
+  }),
+  async (card) => {
+    displayRating.value = card.rating
+    displayReviewsCount.value = card.reviews
+
+    if (!isReviewBackedCard(card.href)) {
+      return
+    }
+
+    try {
+      const summary = await getReviewSummary(card.id)
+      if (summary.reviews > 0 && Number.isFinite(summary.rating)) {
+        displayRating.value = summary.rating
+        displayReviewsCount.value = summary.reviews
+      }
+    } catch {
+      // keep fallback values from card payload
+    }
+  },
+  { immediate: true },
 )
 </script>

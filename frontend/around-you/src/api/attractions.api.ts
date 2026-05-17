@@ -8,6 +8,7 @@ import type { NatureExperienceCard } from '@/types/nature-experience-card'
 import type { NatureExperienceSource } from '@/types/nature-experience-source'
 import type { NearbyLocationContent } from '@/types/nearby-location-content'
 import { apiGetCached } from '@/api/http'
+import { getReviewsByTarget } from '@/api/reviews.api'
 import { resolveApiAssetUrl } from '@/constants/config'
 import { distanceKm, parseGpsPosition } from '@/utils/geo'
 
@@ -22,8 +23,60 @@ function toRadians(value: number): number {
   return (value * Math.PI) / 180
 }
 
-function normalizedRating(entry: NatureExperienceSource): number {
-  return typeof entry.rating === 'number' ? entry.rating : 0
+type ExperienceReviewSummary = {
+  rating: number
+  reviews: number
+}
+
+const experienceReviewSummaryCache = new Map<string, ExperienceReviewSummary>()
+const pendingExperienceReviewSummaryCache = new Map<string, Promise<ExperienceReviewSummary>>()
+
+async function getExperienceReviewSummary(
+  targetId: string,
+  fallbackRating: number,
+): Promise<ExperienceReviewSummary> {
+  const cachedSummary = experienceReviewSummaryCache.get(targetId)
+
+  if (cachedSummary) {
+    return cachedSummary
+  }
+
+  const pendingSummary = pendingExperienceReviewSummaryCache.get(targetId)
+
+  if (pendingSummary) {
+    return pendingSummary
+  }
+
+  const summaryPromise = getReviewsByTarget(targetId)
+    .then((reviews) => {
+      const summary: ExperienceReviewSummary = {
+        rating: reviews.length
+          ? reviews.reduce((accumulator, review) => accumulator + review.rating, 0) / reviews.length
+          : fallbackRating,
+        reviews: reviews.length,
+      }
+
+      experienceReviewSummaryCache.set(targetId, summary)
+
+      return summary
+    })
+    .catch(() => {
+      const fallbackSummary: ExperienceReviewSummary = {
+        rating: fallbackRating,
+        reviews: 0,
+      }
+
+      experienceReviewSummaryCache.set(targetId, fallbackSummary)
+
+      return fallbackSummary
+    })
+    .finally(() => {
+      pendingExperienceReviewSummaryCache.delete(targetId)
+    })
+
+  pendingExperienceReviewSummaryCache.set(targetId, summaryPromise)
+
+  return summaryPromise
 }
 
 function isMongoObjectId(value: string): boolean {
@@ -220,19 +273,33 @@ async function getExperiencesBySlug(slug: string, limit = 4): Promise<NatureExpe
     ...events.map((event) => ({ ...event, type: 'Event' as const })),
   ]
 
-  return entries
-    .filter((entry) =>
-      entry.slugArray.some((entrySlug: string) => entrySlug.toLowerCase() === slug.toLowerCase()),
-    )
-    .sort((first, second) => normalizedRating(second) - normalizedRating(first))
+  const filteredEntries = entries.filter((entry) =>
+    entry.slugArray.some((entrySlug: string) => entrySlug.toLowerCase() === slug.toLowerCase()),
+  )
+
+  const entriesWithReviewSummary = await Promise.all(
+    filteredEntries.map(async (entry) => ({
+      entry,
+      summary: await getExperienceReviewSummary(entry._id, entry.rating ?? 0),
+    })),
+  )
+
+  return entriesWithReviewSummary
+    .sort((first, second) => {
+      if (second.summary.rating !== first.summary.rating) {
+        return second.summary.rating - first.summary.rating
+      }
+
+      return second.summary.reviews - first.summary.reviews
+    })
     .slice(0, limit)
-    .map((entry) => ({
+    .map(({ entry, summary }) => ({
       id: entry._id,
       name: entry.name,
       description: entry.description,
-      image: resolveApiAssetUrl(entry.heroImage),
-      rating: entry.rating ?? 0,
-      reviews: 0,
+      image: entry.heroImage,
+      rating: summary.rating,
+      reviews: summary.reviews,
       tags: entry.slugArray,
       metaText: entry.type,
       href: entry.type === 'Event' ? `/event/${entry._id}` : `/attraction/${entry._id}`,

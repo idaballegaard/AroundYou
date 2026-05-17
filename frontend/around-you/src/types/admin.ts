@@ -10,6 +10,7 @@ export type AdminFieldType =
   | 'number'
   | 'checkbox'
   | 'tags'
+  | 'slug-picker'
   | 'date'
   | 'image'
   | 'image-list'
