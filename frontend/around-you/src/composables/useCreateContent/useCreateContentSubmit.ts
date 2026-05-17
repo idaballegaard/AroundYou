@@ -82,6 +82,8 @@ export const useCreateContentSubmit = (
     payload: ContentSuggestionPayload,
     token: string | null,
   ): Promise<ContentSubmissionDestination> => {
+    // Admin users write directly to canonical collections. Regular users submit
+    // suggestions so admins can review before publishing.
     if (currentUser.value?.role === 'admin' || isAdmin.value) {
       if (type === 'event') {
         await createEvent(payload as EventPayload, token)
@@ -246,6 +248,8 @@ export const useCreateContentSubmit = (
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Kunne ikke sende forslaget.', 'error')
     } finally {
+      // Image upload state spans compression and upload work for the selected
+      // content type, so it is reset here after all submit branches finish.
       isUploadingImage.value = false
       isSubmitting.value = false
     }

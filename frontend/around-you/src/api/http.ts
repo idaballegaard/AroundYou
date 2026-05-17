@@ -16,6 +16,8 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   const { token, headers, ...requestOptions } = options
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...requestOptions,
+    // Include the HttpOnly auth cookie while still allowing explicit bearer
+    // tokens for endpoints that need the in-memory token immediately.
     credentials: 'include',
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -38,6 +40,8 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   }
 
   if (contentType && !contentType.includes('application/json')) {
+    // Catches misconfigured dev proxies where Vite serves index.html for /api
+    // requests, which otherwise fails later as a JSON parse error.
     throw new Error(`Expected JSON response for ${path}, received ${contentType}`)
   }
 
@@ -52,6 +56,8 @@ export function apiGetCached<T>(path: string, ttlMs = DEFAULT_PUBLIC_GET_CACHE_T
     return cached.promise
   }
 
+  // Cache the in-flight promise as well as the completed value so concurrent
+  // public reads share one request. Failed requests are never cached.
   const promise = apiRequest<T>(path).catch((error) => {
     publicGetCache.delete(path)
     throw error
@@ -66,6 +72,8 @@ export function apiGetCached<T>(path: string, ttlMs = DEFAULT_PUBLIC_GET_CACHE_T
 }
 
 export function clearApiCache(): void {
+  // Mutating admin/content calls should clear public GET cache so home/search
+  // views do not show stale records for the full TTL.
   publicGetCache.clear()
 }
 

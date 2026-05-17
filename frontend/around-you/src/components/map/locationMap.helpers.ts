@@ -35,6 +35,8 @@ export async function getMarkerAddress(latitude: number, longitude: number): Pro
 }
 
 export function createPopupContent(item: LocationMapMarker, address?: string): HTMLElement {
+  // Build popup DOM nodes directly instead of interpolating untrusted names into
+  // HTML strings. Leaflet accepts either HTML strings or HTMLElement content.
   const container = document.createElement('div')
   container.className = 'location-map-popup'
 

@@ -40,6 +40,8 @@ export function useAsyncData<T>(
       data.value = result
       return result
     } catch (caughtError) {
+      // Reset to the caller's known-safe shape so templates can keep rendering
+      // without defensive null checks after a failed request.
       data.value = options.defaultValue
       error.value = options.getErrorMessage?.(caughtError) ?? 'Der opstod en fejl.'
       throw caughtError

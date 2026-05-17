@@ -45,6 +45,8 @@ export function useLocationMap(props: LocationMapProps, emit: LocationMapEmit) {
       emit('marker-selected', item)
     }
 
+    // Re-render markers so the selected marker gets the larger icon before the
+    // map flies to it.
     renderResultMarkers()
     const selectedMarker = resultMarkerInstances.get(item.id)
 
@@ -97,6 +99,8 @@ export function useLocationMap(props: LocationMapProps, emit: LocationMapEmit) {
       resultMarkersLayer = L.layerGroup().addTo(map)
     }
 
+    // Leaflet marker styling is not easily updated in place, so rebuild this
+    // layer whenever selection or marker data changes.
     resultMarkersLayer.clearLayers()
     resultMarkerInstances.clear()
 
@@ -168,6 +172,8 @@ export function useLocationMap(props: LocationMapProps, emit: LocationMapEmit) {
   watch(
     () => [props.center, props.centerZoom, props.markers] as const,
     () => {
+      // Search results can change while a marker is selected. Clear stale
+      // selection so parent list and map do not drift apart.
       if (activeMarkerId.value && !props.markers.some((item) => item.id === activeMarkerId.value)) {
         activeMarkerId.value = null
         emit('update:selectedMarkerId', null)

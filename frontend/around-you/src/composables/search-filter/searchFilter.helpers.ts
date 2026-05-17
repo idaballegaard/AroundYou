@@ -21,9 +21,12 @@ export const areFiltersEqual = (first: SearchFilters, second: SearchFilters) => 
 
 export const getCalendarDays = (year: number, month: number) => {
   const firstDay = new Date(year, month, 1).getDay()
+  // JavaScript weeks start on Sunday; the filter calendar starts on Monday.
   const offset = (firstDay + 6) % 7
   const daysInMonth = new Date(year, month + 1, 0).getDate()
 
+  // Always return a six-week grid so the date dropdown does not resize while
+  // navigating between months.
   return Array.from({ length: 42 }, (_, index) => {
     const dayNumber = index - offset + 1
     return dayNumber > 0 && dayNumber <= daysInMonth ? dayNumber : null

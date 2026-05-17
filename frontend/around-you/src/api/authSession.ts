@@ -2,6 +2,8 @@ import { ref } from 'vue'
 import type { User } from '@/types/user'
 import { hasPermission, hasRole } from '@/utils/accessControl'
 
+// Auth state is intentionally process-memory only. Browser refresh recovery
+// happens through the backend HttpOnly cookie and /user/me, not localStorage.
 export const token = ref<string | null>(null)
 export const currentUser = ref<User | null>(null)
 export const authValidated = ref(false)
