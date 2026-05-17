@@ -7,6 +7,7 @@ export const useCreateContent = () => {
   const {
     selectedType,
     message,
+    messageType,
     categoryOptions,
     eventForm,
     attractionForm,
@@ -43,8 +44,9 @@ export const useCreateContent = () => {
     compressImageFiles,
   )
 
-  const setMessage = (msg: string) => {
+  const setMessage = (msg: string, type: 'success' | 'error' | 'info' = 'info') => {
     message.value = msg
+    messageType.value = type
   }
 
   const onHeroImageSelected = (contentType: ContentType, event: Event) => {
@@ -64,6 +66,7 @@ export const useCreateContent = () => {
     isSubmitting,
     isUploadingImage,
     message,
+    messageType,
     eventHeroImageFile,
     attractionHeroImageFile,
     cityHeroImageFile,

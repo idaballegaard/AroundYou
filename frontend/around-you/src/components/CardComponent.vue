@@ -2,8 +2,8 @@
   <component :is="card.href ? RouterLink : 'div'" :to="card.href" :class="cardClass">
     <div class="h-40 w-full shrink-0 bg-[#C1D2DE]/35">
       <img
-        v-if="card.image && !imageFailed"
-        :src="card.image"
+        v-if="resolvedImage && !imageFailed"
+        :src="resolvedImage"
         :alt="card.name"
         :class="imageClass"
         @error="imageFailed = true"
@@ -58,6 +58,7 @@ import {
   type CardComponentSurface,
   type CardComponentVariant,
 } from '@/components/cardComponent.helpers'
+import { resolveApiAssetUrl } from '@/constants/config'
 
 const props = withDefaults(
   defineProps<{
@@ -131,6 +132,7 @@ const fallbackClass = computed(() => getCardComponentFallbackClass())
 const descriptionClass = computed(() => getCardComponentDescriptionClass(props.surface))
 const metaClass = computed(() => getCardComponentMetaClass(props.surface))
 const tagClass = computed(() => getCardComponentTagClass(props.surface))
+const resolvedImage = computed(() => resolveApiAssetUrl(props.card.image))
 
 watch(
   () => props.card.image,

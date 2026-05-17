@@ -10,6 +10,7 @@ import type {
 export const useCreateContentForm = () => {
   const selectedType = ref<ContentType>('event')
   const message = ref('')
+  const messageType = ref<'success' | 'error' | 'info'>('info')
   const categoryOptions = ref<string[]>([])
 
   const eventForm = reactive<CreateEventForm>({
@@ -77,6 +78,7 @@ export const useCreateContentForm = () => {
   return {
     selectedType,
     message,
+    messageType,
     categoryOptions,
     eventForm,
     attractionForm,

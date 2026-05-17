@@ -11,7 +11,7 @@ import type {
   CreateContentFileArrayRef,
   CreateContentFileRef,
   CreateContentFormType,
-  CreateContentMessageSetter,
+  CreateContentMessageStateSetter,
   CreateEventForm,
 } from '@/types/content/useCreateContent'
 import { compressImageFile } from '@/utils/imageCompressor'
@@ -223,10 +223,10 @@ export const useCreateContentSubmit = (
     return submitContentByRole('city', payload, token)
   }
 
-  const submitSelected = async (setMessage: CreateContentMessageSetter) => {
+  const submitSelected = async (setMessage: CreateContentMessageStateSetter) => {
     try {
       isSubmitting.value = true
-      setMessage('')
+      setMessage('', 'info')
 
       let destination: ContentSubmissionDestination
 
@@ -242,9 +242,10 @@ export const useCreateContentSubmit = (
         destination === 'created'
           ? 'Indholdet er oprettet.'
           : 'Dit forslag er sendt til admin og afventer godkendelse.',
+        'success',
       )
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Kunne ikke sende forslaget.')
+      setMessage(error instanceof Error ? error.message : 'Kunne ikke sende forslaget.', 'error')
     } finally {
       isUploadingImage.value = false
       isSubmitting.value = false

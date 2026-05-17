@@ -41,6 +41,11 @@ export type CreateContentFormType = {
 }
 
 export type CreateContentMessageSetter = (msg: string) => void
+export type CreateContentMessageType = 'success' | 'error' | 'info'
+export type CreateContentMessageStateSetter = (
+  msg: string,
+  type?: CreateContentMessageType,
+) => void
 
 export type CreateContentFileRef = {
   value: File | null

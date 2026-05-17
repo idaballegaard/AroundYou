@@ -1,7 +1,21 @@
 import { ref } from 'vue'
 import { compressImageFile, isAllowedImageType } from '@/utils/imageCompressor'
 import type { ContentType } from '@/types/content'
-import type { CreateContentMessageSetter } from '@/types/content/useCreateContent'
+import type { CreateContentMessageStateSetter } from '@/types/content/useCreateContent'
+
+const isSameFile = (firstFile: File, secondFile: File) =>
+  firstFile.name === secondFile.name &&
+  firstFile.size === secondFile.size &&
+  firstFile.lastModified === secondFile.lastModified
+
+const appendUniqueFiles = (existingFiles: File[], newFiles: File[]) => {
+  return [
+    ...existingFiles,
+    ...newFiles.filter(
+      (newFile) => !existingFiles.some((existingFile) => isSameFile(existingFile, newFile)),
+    ),
+  ]
+}
 
 export const useCreateContentImages = () => {
   const eventHeroImageFile = ref<File | null>(null)
@@ -13,7 +27,7 @@ export const useCreateContentImages = () => {
   const onHeroImageSelected = (
     contentType: ContentType,
     event: Event,
-    setMessage: CreateContentMessageSetter,
+    setMessage: CreateContentMessageStateSetter,
   ) => {
     const target = event.target as HTMLInputElement | null
     const file = target?.files?.[0]
@@ -23,7 +37,7 @@ export const useCreateContentImages = () => {
     }
 
     if (!isAllowedImageType(file)) {
-      setMessage('Kun PNG-, JPG- og WEBP-billeder er tilladt.')
+      setMessage('Kun PNG-, JPG- og WEBP-billeder er tilladt.', 'error')
       target.value = ''
       return
     }
@@ -36,13 +50,13 @@ export const useCreateContentImages = () => {
       cityHeroImageFile.value = file
     }
 
-    setMessage('')
+    setMessage('', 'info')
   }
 
   const onImageArraySelected = (
     contentType: 'event' | 'attraction',
     event: Event,
-    setMessage: CreateContentMessageSetter,
+    setMessage: CreateContentMessageStateSetter,
   ) => {
     const target = event.target as HTMLInputElement | null
     const files = target?.files ? Array.from(target.files) : []
@@ -53,7 +67,7 @@ export const useCreateContentImages = () => {
 
     const invalidFile = files.find((file) => !isAllowedImageType(file))
     if (invalidFile) {
-      setMessage('Kun PNG-, JPG- og WEBP-billeder er tilladt.')
+      setMessage('Kun PNG-, JPG- og WEBP-billeder er tilladt.', 'error')
       if (target) {
         target.value = ''
       }
@@ -61,15 +75,15 @@ export const useCreateContentImages = () => {
     }
 
     if (contentType === 'event') {
-      eventImageArrayFiles.value = files
+      eventImageArrayFiles.value = appendUniqueFiles(eventImageArrayFiles.value, files)
     } else {
-      attractionImageArrayFiles.value = files
+      attractionImageArrayFiles.value = appendUniqueFiles(attractionImageArrayFiles.value, files)
     }
 
     if (target) {
       target.value = ''
     }
-    setMessage('')
+    setMessage('', 'info')
   }
 
   const removeImageArrayFile = (contentType: 'event' | 'attraction', index: number) => {

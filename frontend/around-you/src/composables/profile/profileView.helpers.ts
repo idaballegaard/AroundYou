@@ -1,4 +1,5 @@
 import type { User } from '@/types/user'
+import { resolveApiAssetUrl } from '@/constants/config'
 
 export const AVATAR_UPLOAD_OPTIONS = {
   maxWidth: 800,
@@ -20,7 +21,7 @@ export const getProfileDisplayName = (user: User | null) => {
 }
 
 export const getProfileAvatar = (avatarPreview: string, user: User | null) => {
-  return avatarPreview || user?.userAvatar || ''
+  return avatarPreview || resolveApiAssetUrl(user?.userAvatar ?? '')
 }
 
 export const getProfileInitials = (user: User | null) => {
