@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import Joi from "joi";
-import { Types } from "mongoose";
-import { NotificationModel } from "../models/notificationModel";
 import { ReviewModel } from "../models/reviewModel";
-import { UserModel } from "../models/userModel";
+import {
+  notifyReviewAuthorReviewRemoved,
+  notifyReviewReporters,
+} from "../services/reviewNotification.service";
 import { buildDynamicQuery } from "../utils/dynamicQueryBuilder";
 import {
   getHideUpdate,
@@ -11,130 +11,13 @@ import {
   isValidationError,
   visibleFilter,
 } from "./controllerUtils";
+import {
+  validateReviewBody,
+  validateReviewRemoval,
+} from "../validators/review.validators";
 
 function canModifyReview(req: Request, author: string): boolean {
   return req.user?.role === "admin" || req.user?.userName === author;
-}
-
-async function getReviewAuthorUserId(author: string): Promise<string | null> {
-  const user = await UserModel.findOne({ userName: author }).select("_id");
-  return user?._id.toString() ?? null;
-}
-
-function uniqueUserIds(userIds: Array<string | null | undefined>): string[] {
-  return [...new Set(userIds.filter((userId): userId is string => !!userId))];
-}
-
-async function notifyReviewReporters(
-  review: {
-    _id: Types.ObjectId;
-    title: string;
-    reports: { reportedBy: string }[];
-  },
-  actionTaken: boolean,
-): Promise<void> {
-  const recipients = uniqueUserIds(
-    review.reports.map((report) => report.reportedBy),
-  );
-  if (recipients.length === 0) return;
-
-  await NotificationModel.insertMany(
-    recipients.map((recipientUserId) => ({
-      recipientUserId,
-      type: actionTaken
-        ? "review_report_action_taken"
-        : "review_report_no_action",
-      title: actionTaken ? "Din rapport er behandlet" : "Din rapport er lukket",
-      message: actionTaken
-        ? `Din rapport af anmeldelsen "${review.title}" var succesfuld. Anmeldelsen er blevet fjernet efter gennemgang.`
-        : `Din rapport af anmeldelsen "${review.title}" blev gennemgået, men der blev ikke fundet brud på reglerne.`,
-      reviewId: review._id.toString(),
-    })),
-  );
-}
-
-async function notifyReviewAuthorReviewRemoved(
-  review: {
-    _id: Types.ObjectId;
-    author: string;
-    title: string;
-  },
-  ruleBroken: string,
-): Promise<void> {
-  const authorUserId = await getReviewAuthorUserId(review.author);
-  if (!authorUserId) return;
-
-  await NotificationModel.create({
-    recipientUserId: authorUserId,
-    type: "review_removed",
-    title: "Din anmeldelse er fjernet",
-    message: `Din anmeldelse "${review.title}" er blevet fjernet, fordi den brød reglen: ${ruleBroken}.`,
-    reviewId: review._id.toString(),
-  });
-}
-
-const reviewBodySchema = Joi.object({
-  targetId: Joi.string().trim().min(1).max(255).required(),
-  targetType: Joi.string().valid("city", "event", "attraction").required(),
-  title: Joi.string().trim().min(3).max(255).required(),
-  description: Joi.string().trim().min(6).max(1024).required(),
-  rating: Joi.number().integer().min(1).max(5).required(),
-  image: Joi.string().trim().max(2048).allow("").default(""),
-});
-
-const reviewUpdateSchema = Joi.object({
-  targetId: Joi.any().forbidden(),
-  targetType: Joi.any().forbidden(),
-  title: Joi.string().trim().min(3).max(255),
-  description: Joi.string().trim().min(6).max(1024),
-  rating: Joi.number().integer().min(1).max(5),
-  image: Joi.string().trim().max(2048).allow(""),
-}).min(1);
-
-const reviewRemovalSchema = Joi.object({
-  ruleBroken: Joi.string().trim().min(3).max(500).required(),
-});
-
-function validateReviewBody(
-  payload: Record<string, unknown>,
-  isUpdate = false,
-): Record<string, unknown> {
-  const { error, value } = (
-    isUpdate ? reviewUpdateSchema : reviewBodySchema
-  ).validate(payload, {
-    abortEarly: false,
-    convert: true,
-    noDefaults: isUpdate,
-    stripUnknown: true,
-  });
-
-  if (error) {
-    const validationError = new Error(
-      error.details.map((detail) => detail.message).join(", "),
-    );
-    validationError.name = "ValidationError";
-    throw validationError;
-  }
-
-  return value as Record<string, unknown>;
-}
-
-function validateReviewRemoval(payload: Record<string, unknown>): string {
-  const { error, value } = reviewRemovalSchema.validate(payload, {
-    abortEarly: false,
-    convert: true,
-    stripUnknown: true,
-  });
-
-  if (error) {
-    const validationError = new Error(
-      error.details.map((detail) => detail.message).join(", "),
-    );
-    validationError.name = "ValidationError";
-    throw validationError;
-  }
-
-  return (value as { ruleBroken: string }).ruleBroken;
 }
 
 /**
@@ -514,100 +397,5 @@ export async function likeReview(req: Request, res: Response): Promise<void> {
   } catch (err) {
     console.error("Error liking review:", err);
     res.status(500).json({ message: "Error updating like" });
-  }
-}
-
-export async function reportReview(req: Request, res: Response): Promise<void> {
-  try {
-    const { id } = req.params;
-    const reportedBy = req.user?.userID;
-    const reason =
-      typeof req.body.reason === "string" ? req.body.reason.trim() : "";
-    const safeReason = reason.slice(0, 500);
-
-    if (!reportedBy) {
-      res.status(401).json({ message: "Unauthorized" });
-      return;
-    }
-
-    const review = await ReviewModel.findOne({
-      _id: id,
-      ...visibleFilter(req),
-    });
-
-    if (!review) {
-      res.status(404).json({ message: "Review not found" });
-      return;
-    }
-
-    const alreadyReported = review.reports.some(
-      (report) => report.reportedBy === reportedBy,
-    );
-
-    if (alreadyReported) {
-      res.status(409).json({ message: "Review already reported by user" });
-      return;
-    }
-
-    review.reports.push({
-      reportedBy,
-      reason: safeReason,
-      createdAt: new Date(),
-    });
-    review.reportCount = review.reports.length;
-    review.reportResolved = false;
-    review.reportResolvedAt = undefined;
-    review.reportResolvedBy = undefined;
-
-    const result = await review.save();
-    res.status(200).json(result);
-  } catch (err) {
-    console.error("Error reporting review:", err);
-    res.status(500).json({ message: "Error reporting review" });
-  }
-}
-
-export async function getReportedReviews(
-  req: Request,
-  res: Response,
-): Promise<void> {
-  try {
-    const includeResolved = req.query.includeResolved === "true";
-
-    const result = await ReviewModel.find({
-      reportCount: { $gt: 0 },
-      ...visibleFilter(req),
-      ...(includeResolved ? {} : { reportResolved: false }),
-    }).sort({ reportCount: -1, createdAt: -1 });
-
-    res.status(200).json(result);
-  } catch (err) {
-    console.error("Error fetching reported reviews:", err);
-    res.status(500).json({ message: "Error retrieving reported reviews" });
-  }
-}
-
-export async function resolveReviewReport(
-  req: Request,
-  res: Response,
-): Promise<void> {
-  try {
-    const review = await ReviewModel.findById(req.params.id);
-
-    if (!review) {
-      res.status(404).json({ message: "Review not found" });
-      return;
-    }
-
-    review.reportResolved = true;
-    review.reportResolvedAt = new Date();
-    review.reportResolvedBy = req.user?.userID;
-
-    const result = await review.save();
-    await notifyReviewReporters(review, false);
-    res.status(200).json(result);
-  } catch (err) {
-    console.error("Error resolving review report:", err);
-    res.status(500).json({ message: "Error resolving review report" });
   }
 }

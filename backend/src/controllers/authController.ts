@@ -1,6 +1,4 @@
 import { Request, Response } from "express";
-import type { CookieOptions } from "express";
-import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import Joi, { ValidationResult } from "joi";
 
@@ -8,51 +6,11 @@ import { UserModel } from "../models/userModel";
 import { User } from "../interfaces/user";
 import { getEffectivePermissions } from "../utils/accessControl";
 import { pickTrimmedStringFields } from "../utils/stringFields";
-
-export const AUTH_COOKIE_NAME = "aroundyou_auth";
-
-const AUTH_COOKIE_OPTIONS: CookieOptions = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-  path: "/api",
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-};
-
-function createAuthToken(user: {
-  _id: { toString(): string };
-  userName: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  role: User["role"];
-  permissions: User["permissions"];
-}): string {
-  return jwt.sign(
-    {
-      userID: user._id.toString(),
-      userName: user.userName,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: user.role,
-      permissions: getEffectivePermissions(user.role, user.permissions),
-    },
-    process.env.TOKEN_SECRET as string,
-    { expiresIn: "7d" },
-  );
-}
-
-function setAuthCookie(res: Response, token: string): void {
-  res.cookie(AUTH_COOKIE_NAME, token, AUTH_COOKIE_OPTIONS);
-}
-
-function clearAuthCookie(res: Response): void {
-  res.clearCookie(AUTH_COOKIE_NAME, {
-    ...AUTH_COOKIE_OPTIONS,
-    maxAge: undefined,
-  });
-}
+import {
+  clearAuthCookie,
+  createAuthToken,
+  setAuthCookie,
+} from "../services/authToken.service";
 
 /**
  * REGISTER USER

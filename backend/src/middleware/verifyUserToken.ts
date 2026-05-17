@@ -7,7 +7,7 @@ import {
   normalizePermissions,
   normalizeRole,
 } from "../utils/accessControl";
-import { AUTH_COOKIE_NAME } from "../controllers/authController";
+import { AUTH_COOKIE_NAME } from "../services/authToken.service";
 
 function getCookieValue(cookieHeader: string | undefined, name: string): string | null {
   if (!cookieHeader) {

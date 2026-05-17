@@ -7,9 +7,9 @@ import {
   getReviewById,
   getReviewsByTarget,
   likeReview,
-  reportReview,
   updateReviewById,
 } from "../controllers/reviewController";
+import { reportReview } from "../controllers/reviewReportController";
 import { reviewRateLimiter } from "../middleware/rateLimit";
 import { requirePermission } from "../middleware/requirePermission";
 import { verifyToken } from "../middleware/verifyUserToken";

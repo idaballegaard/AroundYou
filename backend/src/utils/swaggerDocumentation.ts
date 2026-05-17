@@ -105,7 +105,7 @@ export function setupDocs(app: Application) {
 
   const options = {
     swaggerDefinition,
-    apis: ["src/routes/*.ts", "src/controllers/*.ts"],
+    apis: ["src/docs/*.ts", "src/routes/*.ts", "src/controllers/*.ts"],
     failOnErrors: true,
   };
 
