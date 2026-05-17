@@ -27,6 +27,8 @@ export async function notifyReviewReporters(
   review: ReportedReview,
   actionTaken: boolean,
 ): Promise<void> {
+  // A review can collect multiple reports from users; notify each reporter once
+  // when admin resolves the report queue.
   const recipients = uniqueUserIds(
     review.reports.map((report) => report.reportedBy),
   );

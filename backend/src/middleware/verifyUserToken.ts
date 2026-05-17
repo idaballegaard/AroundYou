@@ -33,6 +33,8 @@ function getRequestToken(req: Request): string | null {
     return authHeader.split(" ")[1];
   }
 
+  // The frontend keeps tokens in memory, so refresh recovery depends on this
+  // HttpOnly cookie fallback.
   return getCookieValue(req.headers.cookie, AUTH_COOKIE_NAME);
 }
 

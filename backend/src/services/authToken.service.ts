@@ -24,6 +24,8 @@ type AuthTokenUser = {
 };
 
 export function createAuthToken(user: AuthTokenUser): string {
+  // Keep this expiry aligned with AUTH_COOKIE_OPTIONS.maxAge so browser refreshes
+  // do not preserve an already-expired token.
   return jwt.sign(
     {
       userID: user._id.toString(),
