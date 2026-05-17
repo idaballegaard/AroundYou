@@ -521,23 +521,51 @@
  *   put:
  *     tags:
  *       - City Routes
- *     summary: Update a CITY by ID
- *     description: Updates an existing CITY in the database by its ID. Requires authentication.
+ *     summary: Update a city by ID
+ *     description: Updates an existing city in the database by its ID. Requires authentication.
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - name: id
  *         in: path
  *         required: true
+ *         description: City ID
  *         schema:
  *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Kolding
+ *               country:
+ *                 type: string
+ *                 example: Denmark
+ *               description:
+ *                 type: string
+ *                 example: Kolding is a Danish city known for Koldinghus and its fjord.
+ *               imageUrl:
+ *                 type: string
+ *                 example: https://example.com/kolding.jpg
+ *               latitude:
+ *                 type: number
+ *                 example: 55.4904
+ *               longitude:
+ *                 type: number
+ *                 example: 9.4722
  *     responses:
  *       200:
- *         description: CITY updated successfully
+ *         description: City updated successfully
  *       400:
  *         description: Bad request - Invalid input
  *       401:
  *         description: Unauthorized - Invalid or missing token
  *       404:
- *         description: CITY not found
+ *         description: City not found
  *       500:
  *         description: Server error
  */
@@ -573,8 +601,8 @@
  *   post:
  *     tags:
  *       - Review Routes
- *     summary: Create a new REVIEW
- *     description: Creates a new REVIEW in the database. Requires authentication.
+ *     summary: Create a new review
+ *     description: Creates a new review for a city, attraction, or event. Requires authentication.
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -582,14 +610,44 @@
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Review'
+ *             type: object
+ *             required:
+ *               - targetType
+ *               - targetId
+ *               - title
+ *               - rating
+ *               - description
+ *             properties:
+ *               targetType:
+ *                 type: string
+ *                 enum: [city, attraction, event]
+ *                 example: event
+ *                 description: The type of content being reviewed
+ *               targetId:
+ *                 type: string
+ *                 example: 665f2e9c8a9d4d0012a12345
+ *                 description: The ID of the city, attraction, or event being reviewed
+ *               title:
+ *                 type: string
+ *                 example: Over alle forventninger, glæder mig til næste år!
+ *                 description: The headline of your review
+ *               rating:
+ *                 type: number
+ *                 minimum: 1
+ *                 maximum: 5
+ *                 example: 5
+ *               description:
+ *                 type: string
+ *                 example: Fantastisk event, jeg kan kun klart anbefale det til alle sammen der læser det
  *     responses:
  *       201:
- *         description: REVIEW created successfully
+ *         description: Review created successfully
  *       400:
  *         description: Bad request - Invalid input
  *       401:
  *         description: Unauthorized - Invalid or missing token
+ *       404:
+ *         description: Target city, attraction, or event not found
  *       500:
  *         description: Server error
  */
@@ -600,38 +658,11 @@
  *   get:
  *     tags:
  *       - Review Routes
- *     summary: Get all REVIEWs
- *     description: Retrieves all REVIEWs from the database.
+ *     summary: Get all reviews
+ *     description: Retrieves all reviews from the database.
  *     responses:
  *       200:
- *         description: A list of all REVIEWs
- *       500:
- *         description: Server error
- */
-
-/**
- * @swagger
- * /reviews/{id}:
- *   put:
- *     tags:
- *       - Review Routes
- *     summary: Update a REVIEW by ID
- *     description: Updates an existing REVIEW in the database by its ID. Requires authentication.
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: REVIEW updated successfully
- *       400:
- *         description: Bad request - Invalid input
- *       401:
- *         description: Unauthorized - Invalid or missing token
- *       404:
- *         description: REVIEW not found
+ *         description: A list of all reviews
  *       500:
  *         description: Server error
  */
@@ -642,23 +673,26 @@
  *   delete:
  *     tags:
  *       - Review Routes
- *     summary: Hide a REVIEW by ID
- *     description: Soft-deletes an existing REVIEW by hiding it. Requires authentication.
+ *     summary: Hide a review by ID
+ *     description: Soft-deletes an existing review by hiding it. Requires authentication.
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - name: id
  *         in: path
  *         required: true
+ *         description: Review ID
  *         schema:
  *           type: string
  *     responses:
  *       204:
- *         description: REVIEW hidden successfully
+ *         description: Review hidden successfully
  *       401:
  *         description: Unauthorized - Invalid or missing token
  *       404:
- *         description: REVIEW not found
+ *         description: Review not found
  *       500:
  *         description: Server error
  */
 
-export {};
+export { };

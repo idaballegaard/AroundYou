@@ -2,7 +2,7 @@
   <section class="rounded-lg border border-slate-200 bg-white p-5">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#de5826]">Kontakt</p>
+        <h6 class="text-[0.8rem] font-semibold uppercase tracking-[0.18em] text-[#de5826]">Kontakt</h6>
         <h2 class="mt-2 text-xl font-black text-[#094b7b]">Henvendelser</h2>
       </div>
       <div class="flex flex-wrap items-center gap-2">

@@ -6,14 +6,13 @@
     <div class="pointer-events-none absolute inset-0 bg-[#e8c7aa]/55"></div>
 
     <div class="relative z-10 mx-4 sm:mx-[50px] bg-white shadow-2xl rounded-xl overflow-hidden">
-      <section class="px-4 py-8 sm:px-8 sm:py-10">
+      <section class="bg-white px-8 py-8">
+        <h1 class="text-5xl font-black tracking-tight text-[#094b7b]">Oplev noget nyt i Danmark</h1>
+        <p class="mt-2 text-xl text-[#094b7b]">Find events, attraktioner og spændende steder nær dig eller i resten af landet.</p>
+      </section>
+
+      <section class="px-4 pt-4 pb-8 sm:px-8 sm:pt-6 sm:pb-10">
         <div class="flex flex-col gap-8">
-          <header class="flex flex-wrap items-center justify-between gap-6">
-            <div class="space-y-2">
-              <h1 class="text-2xl font-semibold text-slate-900">Find ting at lave omkring dig</h1>
-              <p class="text-sm text-slate-500">{{ resultDescription }}</p>
-            </div>
-          </header>
 
           <SearchFilter
             v-model="filters"
@@ -83,7 +82,6 @@ const {
   locationOptions,
   mapMarkers,
   resultCardClass,
-  resultDescription,
   resultsGrid,
   selectedCityCenter,
   selectedResultId,

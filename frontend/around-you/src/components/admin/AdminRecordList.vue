@@ -27,7 +27,7 @@
 
     <div v-else class="mt-4 grid gap-3">
       <article
-        v-for="record in displayedRecords"
+        v-for="record in paginatedRecords"
         :key="record._id"
         class="rounded-lg border border-slate-200 p-4"
       >
@@ -68,6 +68,35 @@
           </div>
         </div>
       </article>
+
+      <div
+        v-if="totalPages > 1"
+        class="mt-2 flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2"
+      >
+        <p class="text-sm font-semibold text-slate-600">
+          Viser {{ pageStart }}-{{ pageEnd }} af {{ displayedRecords.length }}
+        </p>
+
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="currentPage === 1"
+            @click="goToPreviousPage"
+          >
+            Forrige
+          </button>
+          <span class="text-sm font-semibold text-slate-600">Side {{ currentPage }} / {{ totalPages }}</span>
+          <button
+            type="button"
+            class="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="currentPage === totalPages"
+            @click="goToNextPage"
+          >
+            Næste
+          </button>
+        </div>
+      </div>
     </div>
   </section>
 </template>
@@ -90,7 +119,16 @@ const emit = defineEmits<{
   loadHidden: []
 }>()
 
-const { activeTab, displayedRecords, recordTabs } = useAdminRecordList(props, () =>
-  emit('loadHidden'),
-)
+const {
+  activeTab,
+  currentPage,
+  displayedRecords,
+  goToNextPage,
+  goToPreviousPage,
+  pageEnd,
+  pageStart,
+  paginatedRecords,
+  recordTabs,
+  totalPages,
+} = useAdminRecordList(props, () => emit('loadHidden'))
 </script>

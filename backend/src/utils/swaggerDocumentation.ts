@@ -37,31 +37,16 @@ export function setupDocs(app: Application) {
         User: {
           type: "object",
           properties: {
-            userID: { type: "string" },
             firstName: { type: "string" },
             lastName: { type: "string" },
             userName: { type: "string" },
-            userAvatar: { type: "string" },
             email: { type: "string" },
             password: { type: "string" },
-            role: { type: "string", enum: ["user", "admin"] },
-            permissions: {
-              type: "array",
-              items: { type: "string" },
-            },
-            country: { type: "string" },
-            city: { type: "string" },
-            street: { type: "string" },
-            streetNumber: { type: "string" },
-            postalCode: { type: "string" },
-            isRestricted: { type: "boolean" },
-            createdAt: { type: "string", format: "date-time" },
           },
         },
         Attraction: {
           type: "object",
           properties: {
-            attractionID: { type: "string" },
             name: { type: "string" },
             description: { type: "string" },
             heroImage: { type: "string" },
@@ -70,15 +55,14 @@ export function setupDocs(app: Application) {
             link: { type: "string" },
             gpsPosition: { type: "string" },
             slugArray: { type: "array", items: { type: "string" } },
-            updateAt: { type: "string", format: "date-time" },
             openingHours: { type: "array", items: { type: "string" } },
           },
         },
         City: {
           type: "object",
           properties: {
-            cityID: { type: "string" },
             name: { type: "string" },
+            tagLine: { type: "string" },
             description: { type: "string" },
             heroImage: { type: "string" },
             commune: { type: "string" },
@@ -92,7 +76,6 @@ export function setupDocs(app: Application) {
         Event: {
           type: "object",
           properties: {
-            eventID: { type: "string" },
             name: { type: "string" },
             description: { type: "string" },
             heroImage: { type: "string" },
@@ -101,7 +84,6 @@ export function setupDocs(app: Application) {
             link: { type: "string" },
             gpsPosition: { type: "string" },
             slugArray: { type: "array", items: { type: "string" } },
-            updateAt: { type: "string", format: "date-time" },
             isAnnual: { type: "boolean" },
             startDate: { type: "string", format: "date-time" },
             endDate: { type: "string", format: "date-time" },
@@ -111,13 +93,9 @@ export function setupDocs(app: Application) {
         Review: {
           type: "object",
           properties: {
-            reviewID: { type: "string" },
-            author: { type: "string" },
             title: { type: "string" },
             description: { type: "string" },
             rating: { type: "number" },
-            likes: { type: "number" },
-            image: { type: "string" },
             createdAt: { type: "string", format: "date-time" },
           },
         },

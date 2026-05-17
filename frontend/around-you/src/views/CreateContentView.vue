@@ -3,7 +3,7 @@
     class="min-h-screen relative bg-cover bg-center bg-no-repeat py-4 sm:py-[50px]"
     style="background-image: url('/danmarkskort_1800x1280.jpg')"
   >
-    <div class="pointer-events-none absolute inset-0 bg-[#e8c7aa]/55"></div>
+    <div class="pointer-events-none absolute inset-0 bg-[#e8c7aa]/55" />
 
     <div class="relative z-10 mx-4 sm:mx-[50px] bg-white shadow-2xl rounded-xl overflow-hidden">
       <section class="bg-[#094b7b] px-8 py-8">
