@@ -27,15 +27,13 @@ function getAllowedCorsOrigins(): string[] {
   return configuredOrigins.length ? configuredOrigins : DEFAULT_CORS_ORIGINS;
 }
 
-/**
- * CORS configuration
- */
 function setupCors() {
   const allowedOrigins = new Set(getAllowedCorsOrigins());
 
   app.use(
     cors({
       origin(origin, callback) {
+        // Allow server-to-server/no-origin requests while still restricting browser CORS.
         if (!origin || allowedOrigins.has(origin)) {
           callback(null, true);
           return;
@@ -51,23 +49,14 @@ function setupCors() {
   );
 }
 
-/**
- * Middleware setup
- */
 function setupMiddleware() {
   app.use(express.json({ limit: "2mb" }));
 }
 
-/**
- * Routes setup
- */
 function setupRoutes() {
   app.use("/api", routes);
 }
 
-/**
- * Server bootstrap
- */
 export async function startServer() {
   setupCors();
   setupMiddleware();
@@ -75,6 +64,8 @@ export async function startServer() {
 
   setupDocs(app);
 
+  // The server only starts after MongoDB and admin bootstrap complete so tests
+  // and health checks do not hit a partially initialized API.
   await connectDB();
   await ensureDefaultAdminUser();
 

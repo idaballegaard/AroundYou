@@ -17,6 +17,8 @@ const stringArray = Joi.array()
   .max(30)
   .default([]);
 
+// Attractions and events share most fields, while cities intentionally use a
+// smaller place profile. Keep these schemas aligned with frontend create forms.
 const sharedPlaceFields = {
   name: text(3, 255).required(),
   description: text(3, 1024).required(),
@@ -82,6 +84,8 @@ export function sanitizeContentUpdatePayload(
   type: ContentSuggestionType,
   payload: ContentPayload,
 ): ContentPayload {
+  // For PATCH/PUT-style admin updates, reuse the create schema but relax required
+  // fields and avoid applying create-time defaults.
   const describedKeys = Object.keys(schemas[type].describe().keys ?? {});
   const optionalSchema = schemas[type].fork(describedKeys, (schema) =>
     schema.optional(),

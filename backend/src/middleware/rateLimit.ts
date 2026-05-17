@@ -17,6 +17,8 @@ function getClientKey(req: Request): string {
 }
 
 export function createRateLimiter(options: RateLimitOptions) {
+  // This limiter is process-local. Use a shared store before running multiple
+  // backend instances behind a load balancer.
   const entries = new Map<string, RateLimitEntry>();
   const message = options.message ?? "Too many requests. Please try again later.";
   const keyPrefix = options.keyPrefix ?? "default";
@@ -31,6 +33,7 @@ export function createRateLimiter(options: RateLimitOptions) {
     }
   }, options.windowMs);
 
+  // Do not keep the Node process alive only for the cleanup timer.
   cleanup.unref();
 
   return (req: Request, res: Response, next: NextFunction): void => {

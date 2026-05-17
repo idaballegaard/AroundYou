@@ -95,3 +95,37 @@ When adding backend features, prefer this flow:
 5. Add Swagger annotations in `src/docs` when the endpoint is public API surface.
 
 Avoid adding comments for straightforward code. Add comments only where behavior is security-sensitive, has side effects, or is surprising from the function name.
+
+## Request Lifecycle
+
+Most requests follow this path:
+
+1. `src/app.ts` configures CORS, JSON parsing, routes, Swagger, database connection, and default admin bootstrap.
+2. `src/routes/routes.ts` mounts all feature route files below `/api`.
+3. Feature routes apply middleware in the order needed for the endpoint, typically auth first, then role/permission/rate-limit checks, then the controller.
+4. Controllers validate HTTP input and delegate business work to services.
+5. Services call Mongoose models and perform side effects such as notification creation.
+
+## Visibility And Soft Delete
+
+Most public resource reads hide records where `isHidden === true`. Admin reads still default to visible records, but admin endpoints can opt into hidden or all records with `?visibility=hidden` or `?visibility=all`.
+
+The shared visibility behavior lives in `controllers/controllerUtils.ts`. Soft-delete metadata is created by `utils/resourceUtils.ts`.
+
+## Content Payloads
+
+City, event, and attraction payloads are sanitized before writes. The sanitizer strips unknown fields, applies defaults, and validates backend schema requirements that must stay aligned with frontend forms.
+
+Shared content payload validation lives in `utils/contentPayload.ts`.
+
+## Rate Limiting
+
+Rate limiting is currently in-memory per Node process. It is useful for local development and simple deployments, but it is not shared across multiple backend instances. If the backend is scaled horizontally, replace or wrap it with a shared store such as Redis.
+
+## Default Admin User
+
+On startup, the backend can create or repair a default admin user from `ADMIN_*` environment variables. This is intentionally idempotent: existing admin records are updated only when role or permissions are incomplete.
+
+## Error Handling
+
+Controllers currently send their own error responses. Validation errors should become `400`, auth/domain service errors should carry explicit status codes, and unexpected errors should become `500` with a generic response. Avoid leaking internal error details to clients.

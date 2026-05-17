@@ -11,6 +11,8 @@ export async function ensureDefaultAdminUser(): Promise<void> {
     return;
   }
 
+  // Startup bootstrap is idempotent: deployments can repair missing admin
+  // privileges without recreating the account or changing its password.
   const existingAdmin = await UserModel.findOne({ email });
 
   if (existingAdmin) {

@@ -40,6 +40,8 @@ export function buildDynamicQuery<T>(
   const field = body.key;
   const value = body.value;
 
+  // Only allow querying fields that exist on the model schema. This keeps
+  // generic search endpoints from becoming unrestricted Mongo query surfaces.
   const schemaPath = model.schema.path(field);
 
   if (!schemaPath) {
