@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { getAuthToken, setAuthUser } from '@/api/authSession'
 import { getUserProfile, updateUserProfile, type UserProfileUpdate } from '@/api/user'
 import type { User } from '@/types/user'
 
@@ -6,20 +7,9 @@ const user = ref<User | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-const syncStoredUser = (updatedUser: User) => {
-  localStorage.setItem('userName', updatedUser.userName)
-
-  if (updatedUser.userAvatar) {
-    localStorage.setItem('userAvatar', updatedUser.userAvatar)
-    return
-  }
-
-  localStorage.removeItem('userAvatar')
-}
-
 export const useUser = () => {
   const fetchUser = async () => {
-    const token = localStorage.getItem('token')
+    const token = getAuthToken()
 
     if (!token) {
       error.value = 'No token found'
@@ -39,7 +29,7 @@ export const useUser = () => {
   }
 
   const updateUser = async () => {
-    const token = localStorage.getItem('token')
+    const token = getAuthToken()
 
     if (!token || !user.value) return
 
@@ -55,7 +45,7 @@ export const useUser = () => {
         userAvatar: user.value.userAvatar,
       }
       user.value = await updateUserProfile(token, updates)
-      syncStoredUser(user.value)
+      setAuthUser(user.value)
     } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : 'Unknown error'
     } finally {

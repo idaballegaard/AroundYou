@@ -5,7 +5,7 @@ import { getAuthToken } from '@/api/authSession'
 import { uploadImageFile } from '@/api/contentApi'
 import { restrictUserProfile } from '@/api/user'
 import { useAuth } from '@/composables/useAuth'
-import { useUser } from '@/composables/useUser'
+import { useUser } from '@/composables/profile/useUser'
 import { compressImageFile, isAllowedImageType } from '@/utils/imageCompressor'
 import {
   AVATAR_UPLOAD_ERROR_MESSAGE,

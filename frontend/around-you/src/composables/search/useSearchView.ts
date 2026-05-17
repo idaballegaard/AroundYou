@@ -1,7 +1,7 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { useSearchResults } from '@/composables/useSearchResults'
+import { useSearchResults } from '@/composables/search/useSearchResults'
 import type { SearchFilters } from '@/types/search'
 import {
   clampPage,

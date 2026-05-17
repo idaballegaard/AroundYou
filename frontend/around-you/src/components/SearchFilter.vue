@@ -74,7 +74,7 @@ import SearchFilterCategoryField from '@/components/search-filter/SearchFilterCa
 import SearchFilterDateField from '@/components/search-filter/SearchFilterDateField.vue'
 import SearchFilterLocationField from '@/components/search-filter/SearchFilterLocationField.vue'
 import SearchFilterTypeField from '@/components/search-filter/SearchFilterTypeField.vue'
-import { useSearchFilter } from '@/composables/useSearchFilter'
+import { useSearchFilter } from '@/composables/search-filter/useSearchFilter'
 import type { SearchFilters } from '@/types/search'
 
 const props = withDefaults(

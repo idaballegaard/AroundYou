@@ -57,7 +57,7 @@
 
 <script setup lang="ts">
 import HomeContentSection from '@/components/HomeContentSection.vue'
-import { useHomeViewData } from '@/composables/useHomeViewData'
+import { useHomeViewData } from '@/composables/home/useHomeViewData'
 
 const {
   showNearbySection,

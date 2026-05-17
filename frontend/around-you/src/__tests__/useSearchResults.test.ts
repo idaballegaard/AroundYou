@@ -1,7 +1,7 @@
 import { defineComponent, nextTick, ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useSearchResults } from '@/composables/useSearchResults'
+import { useSearchResults } from '@/composables/search/useSearchResults'
 import type { SearchFilters } from '@/types/search'
 
 const fetchEventsMock = vi.fn()

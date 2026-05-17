@@ -22,7 +22,10 @@ describe('apiGetCached', () => {
     expect(first).toEqual([{ _id: 'event-1' }])
     expect(second).toEqual([{ _id: 'event-1' }])
     expect(fetchMock).toHaveBeenCalledOnce()
-    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE_URL}/events`, { headers: {} })
+    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE_URL}/events`, {
+      credentials: 'include',
+      headers: {},
+    })
   })
 
   it('can be cleared after content mutations', async () => {
@@ -44,5 +47,20 @@ describe('apiGetCached', () => {
     await expect(apiGetCached('/events')).resolves.toEqual([{ _id: 'event-2' }])
 
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('rejects successful non-json responses with a clear error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers({ 'content-type': 'text/html' }),
+        json: () => Promise.reject(new SyntaxError('Unexpected token <')),
+      }),
+    )
+
+    await expect(apiGetCached('/city')).rejects.toThrow(
+      'Expected JSON response for /city, received text/html',
+    )
   })
 })

@@ -7,20 +7,46 @@ import {
   normalizePermissions,
   normalizeRole,
 } from "../utils/accessControl";
+import { AUTH_COOKIE_NAME } from "../controllers/authController";
+
+function getCookieValue(cookieHeader: string | undefined, name: string): string | null {
+  if (!cookieHeader) {
+    return null;
+  }
+
+  const cookie = cookieHeader
+    .split(";")
+    .map((entry) => entry.trim())
+    .find((entry) => entry.startsWith(`${name}=`));
+
+  if (!cookie) {
+    return null;
+  }
+
+  return decodeURIComponent(cookie.slice(name.length + 1));
+}
+
+function getRequestToken(req: Request): string | null {
+  const authHeader = req.headers.authorization;
+
+  if (authHeader?.startsWith("Bearer ")) {
+    return authHeader.split(" ")[1];
+  }
+
+  return getCookieValue(req.headers.cookie, AUTH_COOKIE_NAME);
+}
 
 export async function verifyToken(
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
-  const authHeader = req.headers.authorization;
+  const token = getRequestToken(req);
 
-  if (!authHeader?.startsWith("Bearer ")) {
+  if (!token) {
     res.status(401).json({ message: "No token provided" });
     return;
   }
-
-  const token = authHeader.split(" ")[1];
 
   try {
     const decoded = jwt.verify(token, process.env.TOKEN_SECRET as string);

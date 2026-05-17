@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useUserProfileView } from '@/composables/profile/useUserProfileView'
+import { clearAuthSession, setAuthSession } from '@/api/authSession'
 import type { User } from '@/types/user'
 
 const mocks = vi.hoisted(() => ({
@@ -20,7 +21,7 @@ const user = ref<User | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-vi.mock('@/composables/useUser', () => ({
+vi.mock('@/composables/profile/useUser', () => ({
   useUser: () => ({
     user,
     loading,
@@ -84,6 +85,7 @@ const mountProfileHarness = () => {
 describe('useUserProfileView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    clearAuthSession()
     const storage = new Map<string, string>()
 
     vi.stubGlobal('localStorage', {
@@ -151,7 +153,7 @@ describe('useUserProfileView', () => {
   })
 
   it('uploads a selected avatar before saving the profile', async () => {
-    localStorage.setItem('token', 'token-123')
+    setAuthSession('token-123', user.value!)
     const { state, wrapper } = mountProfileHarness()
     const input = document.createElement('input')
     const file = new File(['avatar'], 'avatar.jpg', { type: 'image/jpeg' })
@@ -192,7 +194,7 @@ describe('useUserProfileView', () => {
   })
 
   it('restricts the user, logs out, and redirects after confirming account deletion', async () => {
-    localStorage.setItem('token', 'token-123')
+    setAuthSession('token-123', user.value!)
     const { state, wrapper } = mountProfileHarness()
 
     await state.confirmDeleteAccount()

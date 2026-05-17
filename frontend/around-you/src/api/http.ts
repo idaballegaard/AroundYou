@@ -16,11 +16,13 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   const { token, headers, ...requestOptions } = options
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...requestOptions,
+    credentials: 'include',
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },
   })
+  const contentType = response.headers?.get?.('content-type') ?? ''
 
   if (!response.ok) {
     let message = `Request failed for ${path}`
@@ -33,6 +35,10 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     }
 
     throw new Error(message)
+  }
+
+  if (contentType && !contentType.includes('application/json')) {
+    throw new Error(`Expected JSON response for ${path}, received ${contentType}`)
   }
 
   return response.json() as Promise<T>

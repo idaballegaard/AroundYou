@@ -2,7 +2,7 @@ import { defineComponent, nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { useReviewSection } from '@/composables/useReviewSection'
+import { useReviewSection } from '@/composables/reviews/useReviewSection'
 import type { ReviewItem } from '@/api/reviews.api'
 
 const mocks = vi.hoisted(() => ({

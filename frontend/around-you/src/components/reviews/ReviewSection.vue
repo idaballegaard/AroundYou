@@ -73,7 +73,7 @@ import { RouterLink } from 'vue-router'
 import ReportReviewModal from '@/components/reviews/ReportReviewModal.vue'
 import ReviewForm from '@/components/reviews/ReviewForm.vue'
 import ReviewItem from '@/components/reviews/ReviewItem.vue'
-import { useReviewSection } from '@/composables/useReviewSection'
+import { useReviewSection } from '@/composables/reviews/useReviewSection'
 import { useAuth } from '@/composables/useAuth'
 import { type ReviewTargetType } from '@/api/reviews.api'
 

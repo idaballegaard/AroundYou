@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { useAuthService } from '../api/authService'
+import { clearAuthSession } from '@/api/authSession'
 import { USER_API_URL } from '@/constants/config'
 
 // Mock utils
@@ -14,6 +15,7 @@ describe('useAuthService', () => {
 
   beforeEach(() => {
     vi.restoreAllMocks()
+    clearAuthSession()
 
     auth = useAuthService()
 
@@ -32,7 +34,7 @@ describe('useAuthService', () => {
     vi.stubGlobal('fetch', vi.fn())
   })
 
-  it('logs in successfully and stores token + user data', async () => {
+  it('logs in successfully and keeps token + user data in memory', async () => {
     const mockResponse = {
       token: 'fake-jwt-token',
       user: {
@@ -68,9 +70,9 @@ describe('useAuthService', () => {
 
     expect(result.token).toBe('fake-jwt-token')
     expect(auth.token.value).toBe('fake-jwt-token')
-    expect(localStorage.getItem('token')).toBe('fake-jwt-token')
-    expect(localStorage.getItem('userName')).toBe('testUser')
-    expect(localStorage.getItem('userAvatar')).toBe('avatar.png')
+    expect(auth.currentUser.value?.userName).toBe('testUser')
+    expect(auth.currentUser.value?.userAvatar).toBe('avatar.png')
+    expect(localStorage.getItem('token')).toBe(null)
   })
 
   it('removes avatar if not provided', async () => {
@@ -96,7 +98,7 @@ describe('useAuthService', () => {
 
     await auth.login('testUser', 'password')
 
-    expect(localStorage.getItem('userAvatar')).toBe(null)
+    expect(auth.currentUser.value?.userAvatar).toBeUndefined()
   })
 
   it('marks admin users as admin after login', async () => {
