@@ -56,7 +56,7 @@
     class="flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-600"
   >
     <input v-model="form.isAnnual" type="checkbox" class="h-4 w-4" />
-    Årligt arrangement
+    Årligt event
   </label>
   <textarea
     v-model="form.description"
