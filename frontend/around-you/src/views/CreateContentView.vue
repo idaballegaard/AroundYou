@@ -9,7 +9,7 @@
       <section class="bg-[#094b7b] px-8 py-8">
         <h1 class="text-4xl font-black tracking-tight text-white">Del din oplevelse med andre</h1>
         <p class="mt-2 text-base text-white">
-          Tilføj nye byer, arrangementer eller attraktioner og vær med til at inspirere andre brugere
+          Tilføj nye byer, events eller attraktioner og vær med til at inspirere andre brugere
         </p>
       </section>
 
