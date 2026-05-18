@@ -1,5 +1,5 @@
 import { getAuthToken } from '@/api/authSession'
-import { apiRequest, jsonHeaders } from '@/api/http'
+import { apiRequest, clearApiCache, jsonHeaders } from '@/api/http'
 
 export type ReviewTargetType = 'city' | 'event' | 'attraction'
 
@@ -78,4 +78,22 @@ export async function updateReview(
     headers: jsonHeaders(),
     body: JSON.stringify(payload),
   })
+}
+
+type DeleteReviewResponse = {
+  message: string
+  data: ReviewItem
+}
+
+export async function deleteReview(reviewId: string): Promise<ReviewItem> {
+  const response = await apiRequest<DeleteReviewResponse>(`/reviews/${encodeURIComponent(reviewId)}`, {
+    method: 'DELETE',
+    token: getAuthToken(),
+  })
+
+  // Detail pages and cards derive rating/count data from visible reviews, so a
+  // self-delete needs to invalidate short-lived public reads.
+  clearApiCache()
+
+  return response.data
 }

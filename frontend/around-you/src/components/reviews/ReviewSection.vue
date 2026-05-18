@@ -46,12 +46,15 @@
         :edit-form="editForm"
         :edit-saving="editSaving"
         :edit-error="editError"
+        :delete-loading="deleteLoading === review._id"
+        :delete-error="deleteErrorId === review._id ? deleteError : null"
         :is-reported="isReviewReported(review._id)"
         :has-liked="hasLiked(review)"
         :like-loading="likeLoading === review._id"
         @start-edit="startEdit(review)"
         @cancel-edit="cancelEdit"
         @save-edit="saveEdit(review._id)"
+        @delete-review="deleteOwnReview(review)"
         @open-report="openReportModal(review)"
         @toggle-like="toggleLike(review)"
         @update:edit-form="editForm = $event"
@@ -107,6 +110,9 @@ const {
   editForm,
   editSaving,
   editError,
+  deleteLoading,
+  deleteError,
+  deleteErrorId,
   reportModalOpen,
   reportTargetReview,
   reportForm,
@@ -119,6 +125,7 @@ const {
   closeReportModal,
   submitReport,
   saveEdit,
+  deleteOwnReview,
   submitReview,
   hasLiked,
   toggleLike,

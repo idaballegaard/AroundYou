@@ -2,6 +2,7 @@ import { computed, ref, watch, type Ref } from 'vue'
 import { getStoredUserId } from '@/utils/auth'
 import {
   createReview,
+  deleteReview,
   getReviewsByTarget,
   likeReview,
   reportReview,
@@ -52,6 +53,9 @@ export function useReviewSection(options: {
   const editForm = ref<EditReviewFormState>({ title: '', description: '', rating: 0, image: '' })
   const editSaving = ref(false)
   const editError = ref<string | null>(null)
+  const deleteLoading = ref<string | null>(null)
+  const deleteError = ref<string | null>(null)
+  const deleteErrorId = ref<string | null>(null)
 
   const reportModalOpen = ref(false)
   const reportTargetReview = ref<ReviewItem | null>(null)
@@ -167,6 +171,28 @@ export function useReviewSection(options: {
     }
   }
 
+  async function deleteOwnReview(review: ReviewItem) {
+    if (deleteLoading.value) return
+
+    deleteLoading.value = review._id
+    deleteError.value = null
+    deleteErrorId.value = null
+
+    try {
+      await deleteReview(review._id)
+      reviews.value = reviews.value.filter((entry) => entry._id !== review._id)
+
+      if (editingId.value === review._id) {
+        editingId.value = null
+      }
+    } catch (err) {
+      deleteErrorId.value = review._id
+      deleteError.value = err instanceof Error ? err.message : 'Kunne ikke slette anmeldelsen.'
+    } finally {
+      deleteLoading.value = null
+    }
+  }
+
   async function loadReviews() {
     // Reload when the detail route changes but keep errors scoped to the review
     // section instead of failing the whole page.
@@ -250,6 +276,9 @@ export function useReviewSection(options: {
     editForm,
     editSaving,
     editError,
+    deleteLoading,
+    deleteError,
+    deleteErrorId,
     reportModalOpen,
     reportTargetReview,
     reportForm,
@@ -262,6 +291,7 @@ export function useReviewSection(options: {
     closeReportModal,
     submitReport,
     saveEdit,
+    deleteOwnReview,
     submitReview,
     hasLiked,
     toggleLike,

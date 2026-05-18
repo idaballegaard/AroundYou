@@ -46,6 +46,13 @@
           class="text-xs text-slate-400 underline underline-offset-2 hover:text-[#094b7b]"
           @click="emit('start-edit')"
         >Rediger</button>
+        <button
+          v-if="review.author === userName"
+          type="button"
+          class="text-xs text-slate-400 underline underline-offset-2 hover:text-[#de5826] disabled:cursor-not-allowed disabled:text-slate-300"
+          :disabled="deleteLoading"
+          @click="confirmDelete"
+        >{{ deleteLoading ? 'Sletter...' : 'Slet' }}</button>
       </div>
     </div>
 
@@ -131,6 +138,10 @@
       />
     </template>
 
+    <p v-if="deleteError && review.author === userName" class="mb-3 text-xs text-[#de5826]">
+      {{ deleteError }}
+    </p>
+
     <button
       type="button"
       :disabled="!isAuthenticated || likeLoading"
@@ -167,6 +178,8 @@ const props = defineProps<{
   editForm: EditReviewFormModel
   editSaving: boolean
   editError: string | null
+  deleteLoading: boolean
+  deleteError: string | null
   isReported: boolean
   hasLiked: boolean
   likeLoading: boolean
@@ -176,6 +189,7 @@ const emit = defineEmits<{
   (e: 'start-edit'): void
   (e: 'cancel-edit'): void
   (e: 'save-edit'): void
+  (e: 'delete-review'): void
   (e: 'open-report'): void
   (e: 'toggle-like'): void
   (e: 'update:editForm', value: EditReviewFormModel): void
@@ -201,6 +215,12 @@ function updateField<K extends keyof EditReviewFormModel>(key: K, value: EditRev
     ...props.editForm,
     [key]: value,
   })
+}
+
+function confirmDelete() {
+  if (window.confirm('Er du sikker på, at du vil slette din anmeldelse?')) {
+    emit('delete-review')
+  }
 }
 
 function formatDate(dateStr: string): string {
