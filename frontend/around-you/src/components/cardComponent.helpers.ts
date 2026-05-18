@@ -35,13 +35,13 @@ export const getCardComponentFallbackClass = () =>
 
 export const getCardComponentDescriptionClass = (surface: CardComponentSurface) =>
   surface === 'blue'
-    ? 'mt-1 line-clamp-3 text-xs leading-relaxed text-gray-700'
-    : 'mt-1 line-clamp-3 text-xs leading-relaxed text-gray-500'
+    ? 'mt-1 line-clamp-2 text-xs leading-relaxed text-gray-700 sm:line-clamp-3'
+    : 'mt-1 line-clamp-2 text-xs leading-relaxed text-gray-500 sm:line-clamp-3'
 
 export const getCardComponentMetaClass = (surface: CardComponentSurface) =>
-  surface === 'blue' ? 'text-xs text-gray-700' : 'text-xs text-gray-400'
+  surface === 'blue' ? 'text-[11px] text-gray-700 sm:text-xs' : 'text-[11px] text-gray-400 sm:text-xs'
 
 export const getCardComponentTagClass = (surface: CardComponentSurface) =>
   surface === 'blue'
-    ? 'rounded-full border border-gray-200 px-2 py-0.5 text-[10px] text-gray-700'
-    : 'rounded-full border border-gray-200 px-2 py-0.5 text-[10px] text-gray-500'
+    ? 'max-w-full truncate rounded-full border border-gray-200 px-1.5 py-0.5 text-[10px] text-gray-700 sm:px-2'
+    : 'max-w-full truncate rounded-full border border-gray-200 px-1.5 py-0.5 text-[10px] text-gray-500 sm:px-2'

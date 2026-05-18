@@ -1,6 +1,6 @@
 <template>
   <component :is="card.href ? RouterLink : 'div'" :to="card.href" :class="cardClass">
-    <div class="h-40 w-full shrink-0 bg-[#C1D2DE]/35">
+    <div class="h-28 w-full shrink-0 bg-[#C1D2DE]/35 sm:h-40">
       <img
         v-if="resolvedImage && !imageFailed"
         :src="resolvedImage"
@@ -13,11 +13,11 @@
       </div>
     </div>
 
-    <div class="p-3">
-      <h6 class="text-sm text-[#094b7b]">{{ card.name }}</h6>
+    <div class="min-w-0 p-2.5 sm:p-3">
+      <h6 class="line-clamp-2 break-words text-sm leading-snug text-[#094b7b]">{{ card.name }}</h6>
       <p :class="descriptionClass">{{ card.description }}</p>
 
-      <div class="mt-1 flex items-center gap-1">
+      <div class="mt-1 flex min-w-0 flex-wrap items-center gap-x-1 gap-y-0.5">
         <span class="text-xs font-bold text-gray-800">{{ displayRating.toFixed(1) }}</span>
         <div class="flex text-[#de5826]">
           <span v-for="starIndex in 5" :key="starIndex" class="text-xs">
@@ -34,7 +34,7 @@
         <span v-else :class="metaClass">({{ displayReviewsCount.toLocaleString() }})</span>
       </div>
 
-      <div class="mt-2 flex flex-wrap gap-1">
+      <div class="mt-2 flex min-w-0 flex-wrap gap-1">
         <span v-for="tag in card.tags" :key="tag" :class="tagClass">
           {{ tag }}
         </span>
