@@ -14,6 +14,7 @@
 
     <div class="grid min-w-0 gap-4 sm:gap-6">
       <AdminSuggestionQueue
+        :config="config"
         :suggestions="suggestions"
         :is-loading="isLoading"
         :active-suggestion-id="activeSuggestionId"
