@@ -9,6 +9,8 @@ const isSameFile = (firstFile: File, secondFile: File) =>
   firstFile.lastModified === secondFile.lastModified
 
 const appendUniqueFiles = (existingFiles: File[], newFiles: File[]) => {
+  // Native file inputs can emit the same file across repeated selections.
+  // Compare stable file metadata so additional-image chips do not duplicate.
   return [
     ...existingFiles,
     ...newFiles.filter(
@@ -18,6 +20,8 @@ const appendUniqueFiles = (existingFiles: File[], newFiles: File[]) => {
 }
 
 export const useCreateContentImages = () => {
+  // Separate refs per content type preserve selected images when users switch
+  // between tabs before submitting.
   const eventHeroImageFile = ref<File | null>(null)
   const attractionHeroImageFile = ref<File | null>(null)
   const cityHeroImageFile = ref<File | null>(null)
@@ -29,6 +33,8 @@ export const useCreateContentImages = () => {
     event: Event,
     setMessage: CreateContentMessageStateSetter,
   ) => {
+    // Hero fields store the raw File until submit, where compression/upload is
+    // coordinated with payload validation.
     const target = event.target as HTMLInputElement | null
     const file = target?.files?.[0]
 
@@ -58,6 +64,8 @@ export const useCreateContentImages = () => {
     event: Event,
     setMessage: CreateContentMessageStateSetter,
   ) => {
+    // Additional images are optional but still validated eagerly so users get
+    // immediate feedback before the heavier submit path.
     const target = event.target as HTMLInputElement | null
     const files = target?.files ? Array.from(target.files) : []
 

@@ -7,6 +7,8 @@ import { ContentSuggestionType } from "../interfaces/contentSuggestion";
 import { sanitizeContentPayload } from "../utils/contentPayload";
 
 const SUGGESTION_MODELS = {
+  // Suggestions are stored separately until approval, then copied into the
+  // canonical collection for their content type.
   attraction: AttractionModel,
   event: EventModel,
   city: CityModel,
@@ -47,6 +49,8 @@ export async function createContentSuggestion(
   let sanitizedPayload: Record<string, unknown>;
 
   try {
+    // Validate before saving the suggestion so admins only review payloads that
+    // can later be promoted without schema surprises.
     sanitizedPayload = sanitizeContentPayload(type, payload);
   } catch (err) {
     res.status(400).json({
@@ -87,6 +91,7 @@ export async function getContentSuggestions(
   try {
     const requestedStatus = req.query.status;
 
+    // Invalid or missing status defaults to the moderation queue.
     const status: ContentSuggestionStatus = isContentSuggestionStatus(
       requestedStatus,
     )
@@ -123,6 +128,8 @@ export async function approveContentSuggestion(
 
     const Model = SUGGESTION_MODELS[suggestion.type];
 
+    // Re-sanitize stored suggestions at approval time. This protects old queued
+    // suggestions if validation rules changed after submission.
     const createdContent = await new Model(
       sanitizeContentPayload(suggestion.type, suggestion.payload),
     ).save();
@@ -164,6 +171,8 @@ export async function rejectContentSuggestion(
     suggestion.reviewedBy = req.user?.userID;
     suggestion.reviewedAt = new Date();
 
+    // Rejection reason is optional because admins may reject obvious spam or
+    // duplicate suggestions without needing a long explanation.
     suggestion.rejectionReason =
       typeof req.body.reason === "string" ? req.body.reason.trim() : "";
 

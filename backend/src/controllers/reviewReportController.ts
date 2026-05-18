@@ -44,6 +44,7 @@ export async function reportReview(req: Request, res: Response): Promise<void> {
       reason: safeReason,
       createdAt: new Date(),
     });
+    // Keep reportCount denormalized for efficient admin sorting/filtering.
     review.reportCount = review.reports.length;
     review.reportResolved = false;
     review.reportResolvedAt = undefined;
@@ -64,6 +65,8 @@ export async function getReportedReviews(
   try {
     const includeResolved = req.query.includeResolved === "true";
 
+    // Admin review report screens default to unresolved reports. Historical
+    // resolved reports can still be requested explicitly.
     const result = await ReviewModel.find({
       reportCount: { $gt: 0 },
       ...visibleFilter(req),
@@ -94,6 +97,8 @@ export async function resolveReviewReport(
     review.reportResolvedBy = req.user?.userID;
 
     const result = await review.save();
+    // Resolving without removal tells reporters the review was checked but left
+    // visible.
     await notifyReviewReporters(review, false);
     res.status(200).json(await attachAuthorAvatar(result));
   } catch (err) {

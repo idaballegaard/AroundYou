@@ -53,4 +53,7 @@ const emit = defineEmits<{
   selected: [event: Event]
   remove: [index: number]
 }>()
+
+// This component only owns the file-picker presentation. Validation,
+// compression, and upload live in the create-content composables.
 </script>

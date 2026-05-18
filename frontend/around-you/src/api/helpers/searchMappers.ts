@@ -3,6 +3,8 @@ import { distanceKm, parseGpsPosition } from '@/utils/geo'
 import type { ApiAttraction, ApiEvent, City, Coordinates, SearchResult } from '@/types/search'
 
 function getNearestCityName(gpsPosition: string | undefined, cities: City[]): string {
+  // Events and attractions only store coordinates. Use the city dataset to show
+  // a human-readable location in search cards.
   const coords = parseGpsPosition(gpsPosition)
 
   if (!coords || !cities.length) {
@@ -96,6 +98,8 @@ export function mapCityToSearchResult(city: City): SearchResult {
 }
 
 export function getCityCoordinates(cities: City[]): Record<string, Coordinates> {
+  // Key by lower-case city name for quick lookups when a user selects a city in
+  // the search location field.
   return cities.reduce<Record<string, Coordinates>>((accumulator, city) => {
     if (!city.name) {
       return accumulator
@@ -119,5 +123,6 @@ export function distanceBetweenSearchCoordinates(from: Coordinates, to: Coordina
 }
 
 export const byNewestDate = (first: SearchResult, second: SearchResult) => {
+  // Dates are normalized to yyyy-mm-dd, so lexical sorting matches chronology.
   return second.date.localeCompare(first.date)
 }

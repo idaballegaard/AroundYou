@@ -38,5 +38,7 @@ const emit = defineEmits<{
   selected: [event: Event]
 }>()
 
+// Use a stable generated id so the custom Danish label can trigger the hidden
+// file input without exposing the browser's native "Choose file" copy.
 const inputId = `hero-image-${useId()}`
 </script>

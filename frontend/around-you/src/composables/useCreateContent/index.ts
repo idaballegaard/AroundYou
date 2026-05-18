@@ -4,6 +4,8 @@ import { useCreateContentSubmit } from './useCreateContentSubmit'
 import type { ContentType } from '@/types/content'
 
 export const useCreateContent = () => {
+  // Facade composable for CreateContentView.vue. It composes form state, image
+  // selection, and submit behavior while keeping the view mostly declarative.
   const {
     selectedType,
     message,
@@ -45,6 +47,8 @@ export const useCreateContent = () => {
   )
 
   const setMessage = (msg: string, type: 'success' | 'error' | 'info' = 'info') => {
+    // Child composables report errors through this setter so the view has one
+    // status message region regardless of which step failed.
     message.value = msg
     messageType.value = type
   }

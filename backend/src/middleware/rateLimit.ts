@@ -13,6 +13,8 @@ type RateLimitEntry = {
 };
 
 function getClientKey(req: Request): string {
+  // Authenticated requests are limited per user; anonymous requests fall back to
+  // network identity.
   return req.user?.userID ?? req.ip ?? req.socket.remoteAddress ?? "unknown";
 }
 
@@ -42,6 +44,7 @@ export function createRateLimiter(options: RateLimitOptions) {
     const current = entries.get(key);
 
     if (!current || current.resetAt <= now) {
+      // Start a fresh fixed window for new keys and expired entries.
       entries.set(key, {
         count: 1,
         resetAt: now + options.windowMs,
@@ -52,6 +55,8 @@ export function createRateLimiter(options: RateLimitOptions) {
 
     current.count += 1;
 
+    // Expose standard-ish rate limit headers so clients can surface better
+    // retry messages if needed.
     res.setHeader("RateLimit-Limit", String(options.maxRequests));
     res.setHeader("RateLimit-Remaining", String(Math.max(options.maxRequests - current.count, 0)));
     res.setHeader("RateLimit-Reset", String(Math.ceil(current.resetAt / 1000)));

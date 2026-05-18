@@ -1,5 +1,6 @@
 import Joi from "joi";
 import { ContentSuggestionType } from "../interfaces/contentSuggestion";
+import { assertAllowedLanguage } from "./textModeration";
 
 type ContentPayload = Record<string, unknown>;
 
@@ -53,7 +54,15 @@ const schemas: Record<ContentSuggestionType, Joi.ObjectSchema> = {
   }),
 };
 
+const moderatedTextFieldsByType: Record<ContentSuggestionType, string[]> = {
+  attraction: ["name", "description", "slugArray", "openingHours"],
+  event: ["name", "description", "slugArray", "openingHours"],
+  city: ["name", "tagLine", "description", "commune", "region", "country", "visitorCenter"],
+};
+
 function formatValidationMessage(error: Joi.ValidationError): string {
+  // Join all Joi failures so admin/content forms can show a complete correction
+  // list instead of failing one field at a time.
   return error.details.map((detail) => detail.message).join(", ");
 }
 
@@ -63,10 +72,31 @@ function throwValidationError(error: Joi.ValidationError): never {
   throw validationError;
 }
 
+function assertPayloadAllowedLanguage(type: ContentSuggestionType, payload: ContentPayload): void {
+  for (const field of moderatedTextFieldsByType[type]) {
+    const value = payload[field];
+
+    if (typeof value === "string") {
+      assertAllowedLanguage(value);
+      continue;
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach((entry) => {
+        if (typeof entry === "string") {
+          assertAllowedLanguage(entry);
+        }
+      });
+    }
+  }
+}
+
 export function sanitizeContentPayload(
   type: ContentSuggestionType,
   payload: ContentPayload,
 ): ContentPayload {
+  // All create paths, including user suggestions and admin direct creates, pass
+  // through the same schema to keep canonical content shape consistent.
   const { error, value } = schemas[type].validate(payload, {
     abortEarly: false,
     convert: true,
@@ -77,6 +107,7 @@ export function sanitizeContentPayload(
     throwValidationError(error);
   }
 
+  assertPayloadAllowedLanguage(type, value as ContentPayload);
   return value as ContentPayload;
 }
 
@@ -101,5 +132,6 @@ export function sanitizeContentUpdatePayload(
     throwValidationError(error);
   }
 
+  assertPayloadAllowedLanguage(type, value as ContentPayload);
   return value as ContentPayload;
 }

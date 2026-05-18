@@ -8,6 +8,8 @@ export interface ReviewItem {
   targetId: string
   targetType: ReviewTargetType
   author: string
+  // Added by the backend response layer from the author's user profile. It is
+  // optional for compatibility with older responses.
   authorAvatar?: string
   title: string
   description: string
@@ -29,6 +31,7 @@ export interface CreateReviewPayload {
 }
 
 export async function getReviewsByTarget(targetId: string): Promise<ReviewItem[]> {
+  // Target ids are content document ids for cities, events, and attractions.
   return apiRequest<ReviewItem[]>(`/reviews/target/${encodeURIComponent(targetId)}`)
 }
 

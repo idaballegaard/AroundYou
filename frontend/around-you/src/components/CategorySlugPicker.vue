@@ -65,6 +65,8 @@ const query = ref('')
 const isOpen = ref(false)
 const pickerRef = ref<HTMLElement | null>(null)
 
+// Slugs are intentionally stored normalized so filtering, duplicate checks, and
+// backend payloads all use the same category identity.
 const normalizeCategory = (value: string) => value.trim().toLowerCase()
 
 const selectedCategories = computed(() => new Set(props.modelValue.map(normalizeCategory)))
@@ -93,6 +95,8 @@ const menuItems = computed(() => {
     !selectedCategories.value.has(normalizedQuery) &&
     !filteredOptions.value.includes(normalizedQuery)
   ) {
+    // Let users create a category from the current query when it does not exist
+    // in the provided option list.
     items.unshift({
       value: normalizedQuery,
       label: normalizedQuery,
@@ -123,6 +127,8 @@ const removeCategory = (category: string) => {
 }
 
 const handleOutsideClick = (event: MouseEvent) => {
+  // The dropdown is not a native select, so close it manually when focus moves
+  // outside the picker.
   const target = event.target as Node | null
   if (!target || !pickerRef.value?.contains(target)) {
     isOpen.value = false

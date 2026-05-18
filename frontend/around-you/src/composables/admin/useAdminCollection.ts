@@ -18,6 +18,8 @@ import {
 } from './adminCollection.helpers'
 
 export function useAdminCollection(config: AdminCollectionConfig) {
+  // Owns one admin tab's data lifecycle: active records, hidden records,
+  // pending suggestions, and the create/edit form for the configured collection.
   const activeRecords = ref<AdminRecord[]>([])
   const hiddenRecords = ref<AdminRecord[]>([])
   const suggestions = ref<ContentSuggestion[]>([])
@@ -38,6 +40,8 @@ export function useAdminCollection(config: AdminCollectionConfig) {
   )
 
   async function load(): Promise<void> {
+    // Initial tab load combines canonical records and pending suggestions so
+    // moderators can act without switching screens.
     isLoading.value = true
     errorMessage.value = ''
 
@@ -86,6 +90,8 @@ export function useAdminCollection(config: AdminCollectionConfig) {
     errorMessage.value = ''
 
     try {
+      // Geocoding happens immediately before mutation because both admin create
+      // and edit paths need the same backend payload shape.
       if (editingId.value) {
         const payload = await withResolvedGpsPosition(config.key, form.value)
         const updated = await updateAdminRecord(config.key, editingId.value, payload)
@@ -155,6 +161,8 @@ export function useAdminCollection(config: AdminCollectionConfig) {
     try {
       await approveAdminSuggestion(id)
       suggestions.value = suggestions.value.filter((suggestion) => suggestion._id !== id)
+      // Approval creates canonical content on the backend; reload active records
+      // to pick up server-side defaults and generated fields.
       activeRecords.value = await fetchAdminCollection(config.key, 'active')
     } catch (error) {
       errorMessage.value = error instanceof Error ? error.message : 'Kunne ikke godkende forslaget.'

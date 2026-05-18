@@ -18,6 +18,8 @@ function hasToObject(value: unknown): value is ObjectWithToObject {
 }
 
 function toPlainReview(review: unknown): PlainReview {
+  // Controllers may pass Mongoose documents or already-plain objects. Normalize
+  // here so response shaping is independent of how the query was executed.
   if (hasToObject(review)) {
     const plainReview = review.toObject();
     return isPlainObject(plainReview) ? plainReview : {};
@@ -31,6 +33,8 @@ function getAuthorName(review: PlainReview): string {
 }
 
 export async function attachAuthorAvatars(reviews: unknown[]): Promise<PlainReview[]> {
+  // Reviews store author names, not user ids. Batch by unique username so list
+  // endpoints enrich avatars with one user query instead of N queries.
   const plainReviews = reviews.map(toPlainReview);
   const authorNames = Array.from(
     new Set(
@@ -52,6 +56,8 @@ export async function attachAuthorAvatars(reviews: unknown[]): Promise<PlainRevi
   );
 
   return plainReviews.map((review) => ({
+    // Keep the original review payload intact and add a response-only avatar
+    // field for the frontend/admin panel.
     ...review,
     authorAvatar: avatarByUserName.get(getAuthorName(review)) ?? "",
   }));

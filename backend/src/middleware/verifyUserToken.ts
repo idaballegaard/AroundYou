@@ -10,6 +10,7 @@ import {
 import { AUTH_COOKIE_NAME } from "../services/authToken.service";
 
 function getCookieValue(cookieHeader: string | undefined, name: string): string | null {
+  // Avoid adding a cookie parser dependency for one known auth cookie.
   if (!cookieHeader) {
     return null;
   }
@@ -59,6 +60,8 @@ export async function verifyToken(
     }
 
     const payload = decoded as JwtUser;
+    // Re-read the user on every authenticated request so role/permission changes
+    // and account restrictions take effect before the JWT naturally expires.
     const user = await UserModel.findById(payload.userID).select(
       "userName email firstName lastName role permissions isRestricted",
     );
@@ -75,6 +78,8 @@ export async function verifyToken(
     );
 
     req.user = {
+      // Downstream controllers trust req.user as the normalized authorization
+      // context, not as a full user profile.
       userID: payload.userID,
       userName: user.userName,
       email: user.email,

@@ -183,6 +183,9 @@ const emit = defineEmits<{
 
 const resolvedReviewImage = computed(() => resolveApiAssetUrl(props.review.image))
 const displayAuthorAvatar = computed(() => {
+  // Prefer the avatar supplied with the review. While older API responses roll
+  // out, fall back to the current session avatar for the logged-in user's own
+  // reviews, then initials.
   const authorAvatar = props.review.authorAvatar?.trim()
 
   if (authorAvatar) {

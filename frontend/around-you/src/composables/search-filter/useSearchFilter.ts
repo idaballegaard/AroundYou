@@ -15,6 +15,8 @@ import type {
 } from '@/composables/search-filter/searchFilter.types'
 
 export function useSearchFilter(props: SearchFilterProps, emit: SearchFilterEmit) {
+  // SearchFilter is split into draft state, dropdown state, and presentation
+  // helpers so the template can stay focused on controls.
   const categoryQuery = ref('')
   const today = new Date()
   const currentMonth = ref(today.getMonth())
@@ -54,6 +56,8 @@ export function useSearchFilter(props: SearchFilterProps, emit: SearchFilterEmit
   }
 
   const addCategoryFromQuery = () => {
+    // Users can create ad-hoc category filters even when the category is not in
+    // the suggested list.
     const query = categoryQuery.value.trim()
     if (!query.length) return
 
@@ -106,6 +110,8 @@ export function useSearchFilter(props: SearchFilterProps, emit: SearchFilterEmit
   const selectDate = (day: number | null) => {
     if (!day) return
 
+    // Store dates in input-compatible yyyy-mm-dd form; display formatting is a
+    // separate computed value.
     draft.date = toDateInputValue(currentYear.value, currentMonth.value, day)
     dropdowns.isDateOpen.value = false
   }

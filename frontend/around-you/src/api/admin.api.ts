@@ -11,6 +11,8 @@ import type {
 } from '@/types/admin'
 
 function unwrapMutation<TRecord>(response: AdminMutationResponse<TRecord>): TRecord {
+  // Some admin endpoints return the updated document directly while older
+  // endpoints wrap it in { data }. Keep the frontend API stable across both.
   if (
     typeof response === 'object' &&
     response !== null &&
@@ -24,6 +26,8 @@ function unwrapMutation<TRecord>(response: AdminMutationResponse<TRecord>): TRec
 }
 
 async function clearCacheAfterMutation<T>(request: Promise<T>): Promise<T> {
+  // Admin changes affect public pages as well, so invalidate the shared API
+  // cache only after the mutation succeeds.
   const result = await request
   clearApiCache()
   return result
@@ -33,6 +37,8 @@ export function fetchAdminCollection(
   collection: AdminCollectionKey,
   visibility: AdminVisibility = 'active',
 ): Promise<AdminRecord[]> {
+  // Visibility is server-side because hidden documents should never be mixed
+  // into the active admin list accidentally.
   return apiRequest<AdminRecord[]>(`/admin/${collection}?visibility=${visibility}`, {
     token: getAuthToken(),
   })
@@ -148,6 +154,8 @@ export function rejectAdminSuggestion(id: string, reason: string): Promise<Conte
 export function fetchReportedReviews(
   visibility: AdminVisibility = 'active',
 ): Promise<ReportedReview[]> {
+  // Reported reviews share the ReviewItem shape, including authorAvatar when
+  // the backend enriches review responses for the admin moderation queue.
   return apiRequest<ReportedReview[]>(`/admin/reviews/reports?visibility=${visibility}`, {
     token: getAuthToken(),
   })

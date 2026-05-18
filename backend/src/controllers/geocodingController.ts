@@ -11,6 +11,8 @@ type NominatimSearchResponse = {
 };
 
 function parseCoordinate(value: unknown): number | null {
+  // Query params arrive as strings. Return null instead of NaN so validation
+  // branches stay explicit.
   if (typeof value !== "string") {
     return null;
   }
@@ -28,6 +30,7 @@ function isValidLongitude(longitude: number): boolean {
 }
 
 function parseText(value: unknown): string | null {
+  // Empty query strings should behave like missing parameters.
   if (typeof value !== "string") {
     return null;
   }
@@ -49,6 +52,8 @@ export async function forwardGeocode(
   }
 
   try {
+    // Nominatim supports structured street/city search. For city-only lookups,
+    // use q so towns without a street address can still resolve.
     const query = address
       ? new URLSearchParams({
           format: "json",
@@ -119,6 +124,8 @@ export async function reverseGeocode(
   }
 
   try {
+    // Reverse geocoding is only used for display text; the validated coordinate
+    // pair remains the source of truth for maps.
     const query = new URLSearchParams({
       format: "json",
       lat: String(latitude),

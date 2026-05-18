@@ -19,6 +19,8 @@ export function useAsyncData<T>(
   fetcher: () => Promise<T>,
   options: UseAsyncDataOptions<T>,
 ): UseAsyncDataResult<T> {
+  // Shared primitive for views that need the same loading/error/data lifecycle
+  // without pulling in a full query library.
   const data = ref(options.defaultValue) as Ref<T>
   const loading = ref(false)
   const error = ref<string | null>(null)

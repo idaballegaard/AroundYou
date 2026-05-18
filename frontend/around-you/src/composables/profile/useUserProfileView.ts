@@ -27,6 +27,8 @@ type AvatarInputElement = HTMLInputElement & {
 }
 
 export const useUserProfileView = () => {
+  // Owns the profile edit workflow, including avatar preview lifecycle and the
+  // soft-delete/restriction confirmation modal.
   const router = useRouter()
   const { user, loading, error, fetchUser, updateUser } = useUser()
   const { logout } = useAuth()
@@ -46,6 +48,8 @@ export const useUserProfileView = () => {
   const initials = computed(() => getProfileInitials(user.value))
 
   const revokeAvatarPreview = () => {
+    // Object URLs are tied to browser memory; revoke before replacing or
+    // unmounting to avoid leaking selected avatar previews.
     if (avatarPreview.value.startsWith('blob:')) {
       URL.revokeObjectURL(avatarPreview.value)
     }
@@ -77,11 +81,15 @@ export const useUserProfileView = () => {
 
     hasInvalidAvatarFile.value = false
     revokeAvatarPreview()
+    // Keep the preview local until save, so selecting a file does not mutate the
+    // persisted profile unless the user submits the form.
     avatarFile.value = file
     avatarPreview.value = URL.createObjectURL(file)
   }
 
   const uploadAvatarIfSelected = async () => {
+    // Avatar upload is separated from profile update because the user endpoint
+    // stores only the uploaded image URL.
     if (!avatarFile.value || !user.value) {
       return true
     }
@@ -145,6 +153,8 @@ export const useUserProfileView = () => {
   }
 
   const confirmDeleteAccount = async () => {
+    // Account deletion is implemented as backend restriction, then local logout,
+    // so the user loses access immediately without removing historical content.
     const token = getAuthToken()
 
     if (!token) {

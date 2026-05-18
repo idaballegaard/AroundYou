@@ -14,6 +14,8 @@ export type LoginUserInput = {
 };
 
 const userRegistrationSchema = Joi.object<RegisterUserInput>({
+  // These limits mirror the user model enough to fail fast before database
+  // validation, while database uniqueness still remains authoritative.
   firstName: Joi.string().min(2).max(255).required(),
   lastName: Joi.string().min(2).max(255).required(),
   userName: Joi.string().min(2).max(255).required(),

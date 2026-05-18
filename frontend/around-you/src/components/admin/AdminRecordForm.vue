@@ -25,6 +25,7 @@
       >
         {{ field.label }}
         <div v-if="field.type === 'image'" class="grid gap-2">
+          <!-- Native file input text is browser-localized, so hide it behind a Danish label. -->
           <input
             class="sr-only"
             type="file"
@@ -55,6 +56,7 @@
           </button>
         </div>
         <div v-else-if="field.type === 'image-list'" class="grid gap-2">
+          <!-- Multiple uploads share the same custom-label pattern as single image fields. -->
           <input
             class="sr-only"
             type="file"
@@ -182,6 +184,8 @@ defineEmits<{
 const form = defineModel<AdminEditableRecord>({ required: true })
 const { errorMessage } = toRefs(props)
 
+// The admin form is schema-driven. These accessors normalize values from the
+// dynamic record before they reach Vue inputs.
 const {
   arrayField,
   booleanField,

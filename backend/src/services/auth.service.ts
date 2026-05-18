@@ -36,6 +36,9 @@ export type AuthenticatedUserDocument = {
 };
 
 export function toAuthUser(user: AuthenticatedUserDocument): AuthenticatedUser {
+  // Keep auth responses free of database-only fields and always expand the
+  // effective permissions so the frontend does not need to understand role
+  // inheritance rules.
   return {
     userName: user.userName,
     email: user.email,
@@ -48,6 +51,8 @@ export function toAuthUser(user: AuthenticatedUserDocument): AuthenticatedUser {
 }
 
 export async function registerNewUser(input: RegisterUserInput) {
+  // Check unique fields before hashing so validation errors stay specific and
+  // cheap compared with bcrypt work.
   const emailExists = await UserModel.findOne({ email: input.email });
   if (emailExists) {
     throw new AuthServiceError("Email already exists", 409);
@@ -76,6 +81,8 @@ export async function registerNewUser(input: RegisterUserInput) {
 }
 
 export async function authenticateUser(input: LoginUserInput) {
+  // Users can log in with either email or username. The failure message stays
+  // generic so attackers cannot enumerate registered identifiers.
   const user = await UserModel.findOne({
     $or: [{ email: input.identifier }, { userName: input.identifier }],
   });
@@ -88,6 +95,13 @@ export async function authenticateUser(input: LoginUserInput) {
 
   if (!validPassword) {
     throw new AuthServiceError("Invalid credentials", 401);
+  }
+
+  if (user.isRestricted) {
+    throw new AuthServiceError(
+      "Brugeren kan ikke logge ind, fordi kontoen er begrænset.",
+      403,
+    );
   }
 
   return user;
@@ -104,6 +118,8 @@ export async function getUserProfile(userID: string) {
 }
 
 export async function updateUserProfile(userID: string, payload: Record<string, unknown>) {
+  // Only whitelisted string fields are accepted from the profile endpoint; role,
+  // permissions, password, and restriction state cannot be changed here.
   const updates = pickTrimmedStringFields(payload, [
     "userName",
     "email",
@@ -130,6 +146,8 @@ export async function updateUserProfile(userID: string, payload: Record<string, 
 }
 
 export async function restrictUserProfile(userID: string) {
+  // "Delete account" is implemented as restriction so historical user-generated
+  // content can remain while the account can no longer authenticate.
   const updatedUser = await UserModel.findByIdAndUpdate(
     userID,
     { isRestricted: true },

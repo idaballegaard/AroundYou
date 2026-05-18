@@ -21,6 +21,8 @@ import {
 } from "../validators/review.validators";
 
 function canModifyReview(req: Request, author: string): boolean {
+  // Reviews are keyed by author username. Admins can moderate everything; users
+  // can only edit/delete their own reviews.
   return req.user?.role === "admin" || req.user?.userName === author;
 }
 
@@ -40,6 +42,8 @@ export async function createReview(req: Request, res: Response): Promise<void> {
 
     const review = new ReviewModel({
       ...reviewBody,
+      // Always derive the author from the verified token, never from request
+      // body, so users cannot impersonate another reviewer.
       author,
     });
     const result = await review.save();
@@ -128,6 +132,8 @@ export async function updateReviewById(
 
     const updates = {
       ...validateReviewBody(req.body as Record<string, unknown>, true),
+      // The admin PUT route can adjust likes for moderation/repair, but normal
+      // review edits cannot mutate like counts directly.
       ...(typeof req.body.likes === "number" && req.user?.role === "admin"
         ? { likes: req.body.likes }
         : {}),
@@ -190,6 +196,8 @@ export async function deleteReviewById(
     );
 
     if (req.user?.role === "admin") {
+      // Admin removals notify the author and any users who reported the review.
+      // User self-deletes skip moderation notifications.
       await notifyReviewAuthorReviewRemoved(review, ruleBroken);
       if (review.reports.length > 0) {
         await notifyReviewReporters(review, true);
@@ -283,6 +291,8 @@ export async function getReviewByGenericQuery(
   res: Response,
 ): Promise<void> {
   try {
+    // Generic query is kept for internal/admin-style tooling, but
+    // buildDynamicQuery restricts fields/operators to schema-backed values.
     const query = buildDynamicQuery(ReviewModel, req.body);
 
     const result = await ReviewModel.find({
@@ -392,6 +402,8 @@ export async function likeReview(req: Request, res: Response): Promise<void> {
     const likedBy = review.likedBy ?? [];
     const alreadyLiked = likedBy.includes(userId);
 
+    // Toggle like atomically so concurrent requests cannot desync likes and
+    // likedBy more than Mongo's update operation allows.
     const updated = await ReviewModel.findByIdAndUpdate(
       id,
       alreadyLiked

@@ -6,6 +6,8 @@ import { getEffectivePermissions } from "../utils/accessControl";
 export const AUTH_COOKIE_NAME = "aroundyou_auth";
 
 const AUTH_COOKIE_OPTIONS: CookieOptions = {
+  // The frontend stores the bearer token in memory. This HttpOnly cookie lets
+  // the backend restore a session after refresh without exposing the token to JS.
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
@@ -42,6 +44,8 @@ export function createAuthToken(user: AuthTokenUser): string {
 }
 
 export function setAuthCookie(res: Response, token: string): void {
+  // Always set the cookie when issuing/refeshing a token so browser refresh and
+  // direct API calls share the same session source.
   res.cookie(AUTH_COOKIE_NAME, token, AUTH_COOKIE_OPTIONS);
 }
 

@@ -19,6 +19,8 @@ import {
 } from './searchView.helpers'
 
 export const useSearchView = () => {
+  // Coordinates search result filtering, pagination, and map selection for the
+  // SearchView without putting routing/map details in the component.
   const route = useRoute()
   const filters = ref<SearchFilters>({
     location: '',
@@ -72,6 +74,8 @@ export const useSearchView = () => {
   }
 
   const scrollToResult = async (id: string) => {
+    // Map selection happens before Vue has necessarily rendered the filtered
+    // card, so wait for the DOM and then scroll with the sticky header offset.
     await nextTick()
 
     requestAnimationFrame(() => {
@@ -95,6 +99,8 @@ export const useSearchView = () => {
   }
 
   const handleMapMarkerSelected = (marker: SelectedSearchMapMarker) => {
+    // Only city markers drive the location filter. Attraction/event markers are
+    // still shown on the map but do not collapse the result set.
     if (marker.type !== 'city') {
       return
     }
