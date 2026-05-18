@@ -20,7 +20,7 @@ export const adminCollections: AdminCollectionConfig[] = [
     },
     fields: [
       { key: 'name', label: 'Navn', type: 'text', required: true },
-      { key: 'tagLine', label: 'Tagline', type: 'text', required: true },
+      { key: 'tagLine', label: 'Slogan', type: 'text', required: true },
       { key: 'description', label: 'Beskrivelse', type: 'textarea', required: true },
       { key: 'heroImage', label: 'Hero-billede', type: 'image', required: true },
       { key: 'commune', label: 'Kommune', type: 'text', required: true },

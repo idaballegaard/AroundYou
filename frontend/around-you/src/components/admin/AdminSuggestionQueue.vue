@@ -68,7 +68,9 @@
           <summary class="cursor-pointer text-xs font-black text-[#094b7b]">Vis detaljer</summary>
           <dl class="mt-2 grid gap-2">
             <div v-for="[key, value] in Object.entries(suggestion.payload)" :key="key">
-              <dt class="text-[11px] font-black uppercase text-slate-400">{{ key }}</dt>
+              <dt class="text-[11px] font-black uppercase text-slate-400">
+                {{ formatLabel(key) }}
+              </dt>
               <dd class="mt-0.5 line-clamp-2 break-words text-xs text-slate-700">
                 {{ formatValue(value) }}
               </dd>
@@ -81,7 +83,7 @@
             :key="key"
             class="rounded-md bg-slate-50 p-3"
           >
-            <dt class="text-xs font-black uppercase text-slate-400">{{ key }}</dt>
+            <dt class="text-xs font-black uppercase text-slate-400">{{ formatLabel(key) }}</dt>
             <dd class="mt-1 break-words text-sm text-slate-700">{{ formatValue(value) }}</dd>
           </div>
         </dl>
@@ -91,10 +93,16 @@
 </template>
 
 <script setup lang="ts">
-import { formatAdminSuggestionValue } from '@/composables/admin/adminSuggestionQueue.helpers'
+import { computed } from 'vue'
+import {
+  formatAdminSuggestionValue,
+  getAdminSuggestionLabel,
+} from '@/composables/admin/adminSuggestionQueue.helpers'
+import type { AdminCollectionConfig } from '@/types/admin'
 import type { ContentSuggestion } from '@/types/content-suggestion'
 
-defineProps<{
+const props = defineProps<{
+  config: AdminCollectionConfig
   suggestions: ContentSuggestion[]
   isLoading: boolean
   activeSuggestionId: string
@@ -107,4 +115,11 @@ defineEmits<{
 }>()
 
 const formatValue = formatAdminSuggestionValue
+const fieldLabelByKey = computed(
+  () => new Map(props.config.fields.map((field) => [field.key, field.label])),
+)
+
+function formatLabel(key: string): string {
+  return getAdminSuggestionLabel(fieldLabelByKey.value, key)
+}
 </script>
