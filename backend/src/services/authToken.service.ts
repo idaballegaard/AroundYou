@@ -5,22 +5,12 @@ import { getEffectivePermissions } from "../utils/accessControl";
 
 export const AUTH_COOKIE_NAME = "aroundyou_auth";
 
-function shouldUseSecureCookie(): boolean {
-  return (
-    process.env.NODE_ENV === "production" ||
-    process.env.RENDER === "true" ||
-    process.env.FRONTEND_ORIGIN?.startsWith("https://") === true
-  );
-}
-
-const useSecureCookie = shouldUseSecureCookie();
-
 const AUTH_COOKIE_OPTIONS: CookieOptions = {
   // The frontend stores the bearer token in memory. This HttpOnly cookie lets
   // the backend restore a session after refresh without exposing the token to JS.
   httpOnly: true,
-  secure: useSecureCookie,
-  sameSite: useSecureCookie ? "none" : "lax",
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   path: "/api",
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };

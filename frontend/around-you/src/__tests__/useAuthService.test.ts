@@ -21,7 +21,7 @@ describe('useAuthService', () => {
 
     store = {}
 
-    vi.stubGlobal('localStorage', {
+    vi.stubGlobal('sessionStorage', {
       getItem: (key: string) => store[key] || null,
       setItem: (key: string, value: string) => {
         store[key] = value
@@ -72,7 +72,7 @@ describe('useAuthService', () => {
     expect(auth.token.value).toBe('fake-jwt-token')
     expect(auth.currentUser.value?.userName).toBe('testUser')
     expect(auth.currentUser.value?.userAvatar).toBe('avatar.png')
-    expect(localStorage.getItem('token')).toBe(null)
+    expect(sessionStorage.getItem('authToken')).toBe('fake-jwt-token')
   })
 
   it('removes avatar if not provided', async () => {
@@ -168,10 +168,13 @@ describe('useAuthService', () => {
   })
 
   it('does not crash if logout is called twice', () => {
+    store.authToken = 'fake-jwt-token'
+
     auth.logout()
     auth.logout()
 
     expect(auth.token.value).toBe(null)
+    expect(sessionStorage.getItem('authToken')).toBe(null)
   })
 
   it('registers successfully', async () => {
