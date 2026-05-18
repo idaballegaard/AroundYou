@@ -1,4 +1,4 @@
-import express, { Application } from "express";
+import express, { Application, ErrorRequestHandler } from "express";
 import dotenvFlow from "dotenv-flow";
 import cors from "cors";
 
@@ -53,6 +53,30 @@ function setupMiddleware() {
   app.use(express.json({ limit: "2mb" }));
 }
 
+function setupJsonParseErrorHandler() {
+  const jsonParseErrorHandler: ErrorRequestHandler = (err, _req, res, next) => {
+    const parseError = err as SyntaxError & {
+      status?: number;
+      type?: string;
+    };
+
+    if (
+      parseError instanceof SyntaxError &&
+      parseError.status === 400 &&
+      parseError.type === "entity.parse.failed"
+    ) {
+      res.status(400).json({
+        message: "Ugyldig JSON. Tjek at request body er korrekt formateret.",
+      });
+      return;
+    }
+
+    next(err);
+  };
+
+  app.use(jsonParseErrorHandler);
+}
+
 function setupRoutes() {
   app.use("/api", routes);
 }
@@ -60,6 +84,7 @@ function setupRoutes() {
 export async function startServer() {
   setupCors();
   setupMiddleware();
+  setupJsonParseErrorHandler();
   setupRoutes();
 
   setupDocs(app);

@@ -51,7 +51,7 @@ export async function createContentSuggestion(
   try {
     // Validate before saving the suggestion so admins only review payloads that
     // can later be promoted without schema surprises.
-    sanitizedPayload = sanitizeContentPayload(type, payload);
+    sanitizedPayload = await sanitizeContentPayload(type, payload);
   } catch (err) {
     res.status(400).json({
       message:
@@ -131,7 +131,7 @@ export async function approveContentSuggestion(
     // Re-sanitize stored suggestions at approval time. This protects old queued
     // suggestions if validation rules changed after submission.
     const createdContent = await new Model(
-      sanitizeContentPayload(suggestion.type, suggestion.payload),
+      await sanitizeContentPayload(suggestion.type, suggestion.payload),
     ).save();
 
     suggestion.status = "approved";

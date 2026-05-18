@@ -1,12 +1,7 @@
 import { Request, Response } from "express";
+import { geocodeLocation, GeocodingServiceError } from "../services/geocoding.service";
 
 type NominatimReverseResponse = {
-  display_name?: string;
-};
-
-type NominatimSearchResponse = {
-  lat?: string;
-  lon?: string;
   display_name?: string;
 };
 
@@ -52,56 +47,15 @@ export async function forwardGeocode(
   }
 
   try {
-    // Nominatim supports structured street/city search. For city-only lookups,
-    // use q so towns without a street address can still resolve.
-    const query = address
-      ? new URLSearchParams({
-          format: "json",
-          street: address,
-          city,
-          limit: "1",
-        })
-      : new URLSearchParams({
-          format: "json",
-          q: city,
-          limit: "1",
-        });
-
-    const response = await fetch(`https://nominatim.openstreetmap.org/search?${query}`, {
-      headers: {
-        "User-Agent": "AroundYou/1.0",
-        Accept: "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      res.status(response.status).json({ message: "Geocoding failed" });
-      return;
-    }
-
-    const data = (await response.json()) as NominatimSearchResponse[];
-    const firstMatch = data[0];
-    const latitude = parseCoordinate(firstMatch?.lat);
-    const longitude = parseCoordinate(firstMatch?.lon);
-
-    if (
-      !firstMatch ||
-      latitude === null ||
-      longitude === null ||
-      !isValidLatitude(latitude) ||
-      !isValidLongitude(longitude)
-    ) {
-      res.status(404).json({ message: "Location could not be found" });
-      return;
-    }
-
-    res.status(200).json({
-      latitude,
-      longitude,
-      displayName: firstMatch.display_name ?? (address ? `${address}, ${city}` : city),
-    });
+    res.status(200).json(await geocodeLocation(address, city));
   } catch (err) {
     console.error("Geocoding failed:", err);
+
+    if (err instanceof GeocodingServiceError) {
+      res.status(err.statusCode).json({ message: err.message });
+      return;
+    }
+
     res.status(500).json({ message: "Geocoding failed" });
   }
 }

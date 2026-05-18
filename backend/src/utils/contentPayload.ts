@@ -1,5 +1,10 @@
 import Joi from "joi";
 import { ContentSuggestionType } from "../interfaces/contentSuggestion";
+import {
+  formatGpsPosition,
+  geocodeLocation,
+  GeocodingServiceError,
+} from "../services/geocoding.service";
 import { assertAllowedLanguage } from "./textModeration";
 
 type ContentPayload = Record<string, unknown>;
@@ -12,7 +17,7 @@ const link = text(1, 2048);
 const gpsPosition = Joi.string()
   .trim()
   .max(64)
-  .pattern(/^-?\d{1,2}(\.\d+)?,-?\d{1,3}(\.\d+)?$/);
+  .pattern(/^-?\d{1,2}(\.\d+)?\s*,\s*-?\d{1,3}(\.\d+)?$/);
 const stringArray = Joi.array()
   .items(Joi.string().trim().max(120))
   .max(30)
@@ -26,7 +31,9 @@ const sharedPlaceFields = {
   heroImage: imageUrl.required(),
   price: Joi.number().min(0).max(1_000_000).required(),
   link: link.required(),
-  gpsPosition: gpsPosition.required(),
+  gpsPosition,
+  address: optionalText(255),
+  city: optionalText(255),
   imageArray: stringArray,
   slugArray: stringArray,
   openingHours: stringArray,
@@ -48,7 +55,7 @@ const schemas: Record<ContentSuggestionType, Joi.ObjectSchema> = {
     commune: text(1, 255).required(),
     region: text(1, 255).required(),
     country: text(1, 255).required(),
-    gpsPosition: gpsPosition.required(),
+    gpsPosition,
     population: Joi.number().integer().min(0).max(100_000_000).required(),
     visitorCenter: optionalText(255).default(""),
   }),
@@ -72,6 +79,12 @@ function throwValidationError(error: Joi.ValidationError): never {
   throw validationError;
 }
 
+function throwPayloadError(message: string): never {
+  const validationError = new Error(message);
+  validationError.name = "ValidationError";
+  throw validationError;
+}
+
 function assertPayloadAllowedLanguage(type: ContentSuggestionType, payload: ContentPayload): void {
   for (const field of moderatedTextFieldsByType[type]) {
     const value = payload[field];
@@ -91,10 +104,81 @@ function assertPayloadAllowedLanguage(type: ContentSuggestionType, payload: Cont
   }
 }
 
-export function sanitizeContentPayload(
+function normalizeGpsPosition(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  return value.trim().replace(/\s*,\s*/, ",");
+}
+
+function getTrimmedString(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmedValue = value.trim();
+  return trimmedValue ? trimmedValue : null;
+}
+
+async function resolveMissingGpsPosition(
   type: ContentSuggestionType,
   payload: ContentPayload,
-): ContentPayload {
+): Promise<void> {
+  const existingGpsPosition = normalizeGpsPosition(payload.gpsPosition);
+
+  if (existingGpsPosition) {
+    payload.gpsPosition = existingGpsPosition;
+    return;
+  }
+
+  if (type === "city") {
+    const name = getTrimmedString(payload.name);
+
+    if (!name) {
+      throwPayloadError("Byens navn mangler.");
+    }
+
+    try {
+      payload.gpsPosition = formatGpsPosition(await geocodeLocation(null, name));
+    } catch (err) {
+      if (err instanceof GeocodingServiceError) {
+        throwPayloadError(err.message);
+      }
+
+      throw err;
+    }
+
+    return;
+  }
+
+  const address = getTrimmedString(payload.address);
+  const city = getTrimmedString(payload.city);
+
+  if (!address || !city) {
+    throwPayloadError("Indtast enten gpsPosition eller både address og city.");
+  }
+
+  try {
+    payload.gpsPosition = formatGpsPosition(await geocodeLocation(address, city));
+  } catch (err) {
+    if (err instanceof GeocodingServiceError) {
+      throwPayloadError(err.message);
+    }
+
+    throw err;
+  }
+}
+
+function removeTransientLocationFields(payload: ContentPayload): void {
+  delete payload.address;
+  delete payload.city;
+}
+
+export async function sanitizeContentPayload(
+  type: ContentSuggestionType,
+  payload: ContentPayload,
+): Promise<ContentPayload> {
   // All create paths, including user suggestions and admin direct creates, pass
   // through the same schema to keep canonical content shape consistent.
   const { error, value } = schemas[type].validate(payload, {
@@ -107,8 +191,13 @@ export function sanitizeContentPayload(
     throwValidationError(error);
   }
 
-  assertPayloadAllowedLanguage(type, value as ContentPayload);
-  return value as ContentPayload;
+  const sanitizedPayload = value as ContentPayload;
+
+  await resolveMissingGpsPosition(type, sanitizedPayload);
+  removeTransientLocationFields(sanitizedPayload);
+  assertPayloadAllowedLanguage(type, sanitizedPayload);
+
+  return sanitizedPayload;
 }
 
 export function sanitizeContentUpdatePayload(
@@ -132,6 +221,10 @@ export function sanitizeContentUpdatePayload(
     throwValidationError(error);
   }
 
-  assertPayloadAllowedLanguage(type, value as ContentPayload);
-  return value as ContentPayload;
+  const sanitizedPayload = value as ContentPayload;
+
+  removeTransientLocationFields(sanitizedPayload);
+  assertPayloadAllowedLanguage(type, sanitizedPayload);
+
+  return sanitizedPayload;
 }
