@@ -1,11 +1,13 @@
 <template>
-  <section class="rounded-lg border border-slate-200 bg-white p-5">
-    <div class="flex flex-wrap items-center justify-between gap-3">
+  <section class="rounded-lg border border-slate-200 bg-white p-4 sm:p-5">
+    <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
       <div>
-        <h6 class="text-[0.8rem] font-semibold uppercase tracking-[0.18em] text-[#de5826]">Anmeldelser</h6>
-        <h2 class="mt-2 text-xl font-black text-[#094b7b]">Rapporterede anmeldelser</h2>
+        <h6 class="text-[0.8rem] font-semibold uppercase tracking-[0.18em] text-[#de5826]">
+          Anmeldelser
+        </h6>
+        <h2 class="mt-2 text-lg font-black text-[#094b7b] sm:text-xl">Rapporterede anmeldelser</h2>
       </div>
-      <div class="flex flex-wrap items-center gap-2">
+      <div class="grid gap-2 sm:flex sm:flex-wrap sm:items-center">
         <AdminSegmentedTabs v-model="activeReportTab" :tabs="reportTabs" />
         <button
           class="rounded-md border border-slate-300 px-3 py-2 text-sm font-bold"
@@ -40,13 +42,13 @@
       <article
         v-for="review in reports"
         :key="review._id"
-        class="rounded-lg border border-slate-200 p-4"
+        class="rounded-lg border border-slate-200 p-3 sm:p-4"
       >
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <div>
+        <div class="grid gap-3 sm:flex sm:flex-wrap sm:items-start sm:justify-between">
+          <div class="min-w-0">
             <p class="text-sm font-bold text-rose-700">{{ review.reportCount }} rapporter</p>
             <div class="mt-1 flex flex-wrap items-center gap-2">
-              <h3 class="font-black text-slate-900">{{ review.title }}</h3>
+              <h3 class="break-words font-black text-slate-900">{{ review.title }}</h3>
               <span
                 v-if="review.isHidden"
                 class="rounded-full bg-amber-100 px-2 py-1 text-xs font-black text-amber-800"
@@ -58,7 +60,7 @@
               {{ review.author }} · {{ review.targetType }} · {{ review.rating }}/5
             </p>
           </div>
-          <div class="flex gap-2">
+          <div class="grid gap-2 sm:flex sm:flex-wrap">
             <button
               class="rounded-md border border-slate-300 px-3 py-2 text-sm font-bold"
               @click="resolveReport(review._id)"
@@ -81,7 +83,9 @@
             </button>
           </div>
         </div>
-        <p class="mt-3 text-sm text-slate-700">{{ review.description }}</p>
+        <p class="mt-3 line-clamp-3 text-sm text-slate-700 sm:line-clamp-none">
+          {{ review.description }}
+        </p>
         <ul class="mt-3 grid gap-2">
           <li
             v-for="report in review.reports"

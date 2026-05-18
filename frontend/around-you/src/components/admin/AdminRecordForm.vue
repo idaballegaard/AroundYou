@@ -1,23 +1,37 @@
 <template>
-  <aside class="rounded-lg border border-slate-200 bg-white p-5">
+  <aside class="rounded-lg border border-slate-200 bg-white p-4 sm:p-5">
     <div class="flex items-start justify-between gap-3">
       <div>
         <h6 class="text-[0.8rem] font-semibold uppercase tracking-[0.18em] text-[#de5826]">
           {{ config.label }}
         </h6>
-        <h2 class="mt-2 text-xl font-black text-[#094b7b]">
+        <h2 class="mt-2 text-lg font-black text-[#094b7b] sm:text-xl">
           {{ isEditing ? 'Rediger post' : 'Opret post' }}
         </h2>
       </div>
-      <button
-        class="rounded-md border border-slate-300 px-3 py-2 text-sm font-bold"
-        @click="$emit('reset')"
-      >
-        Ny
-      </button>
+      <div class="grid shrink-0 gap-2 sm:flex">
+        <button
+          class="rounded-md border border-slate-300 px-3 py-2 text-sm font-bold xl:hidden"
+          type="button"
+          @click="toggleMobileForm"
+        >
+          {{ isMobileFormOpen ? 'Skjul' : 'Vis' }}
+        </button>
+        <button
+          class="rounded-md border border-slate-300 px-3 py-2 text-sm font-bold"
+          type="button"
+          @click="handleReset"
+        >
+          Ny
+        </button>
+      </div>
     </div>
 
-    <form class="mt-5 grid gap-4" @submit.prevent="$emit('save')">
+    <form
+      class="mt-4 gap-3 sm:mt-5 sm:gap-4 xl:grid"
+      :class="isMobileFormOpen ? 'grid' : 'hidden'"
+      @submit.prevent="$emit('save')"
+    >
       <label
         v-for="field in config.fields"
         :key="field.key"
@@ -103,14 +117,14 @@
         </div>
         <textarea
           v-else-if="field.type === 'textarea'"
-          class="min-h-28 rounded-md border border-slate-300 px-3 py-2 font-normal"
+          class="min-h-24 w-full min-w-0 rounded-md border border-slate-300 px-3 py-2 font-normal sm:min-h-28"
           :required="field.required"
           :value="stringField(field.key)"
           @input="setStringField(field.key, ($event.target as HTMLTextAreaElement).value)"
         />
         <input
           v-else-if="field.type === 'number'"
-          class="rounded-md border border-slate-300 px-3 py-2 font-normal"
+          class="w-full min-w-0 rounded-md border border-slate-300 px-3 py-2 font-normal"
           type="number"
           :required="field.required"
           :value="numberField(field.key)"
@@ -125,7 +139,7 @@
         />
         <input
           v-else-if="field.type === 'date'"
-          class="rounded-md border border-slate-300 px-3 py-2 font-normal"
+          class="w-full min-w-0 rounded-md border border-slate-300 px-3 py-2 font-normal"
           type="datetime-local"
           :required="field.required"
           :value="dateField(field.key)"
@@ -133,7 +147,7 @@
         />
         <input
           v-else
-          class="rounded-md border border-slate-300 px-3 py-2 font-normal"
+          class="w-full min-w-0 rounded-md border border-slate-300 px-3 py-2 font-normal"
           :required="field.required"
           :value="field.type === 'tags' ? tagsField(field.key) : stringField(field.key)"
           @input="
@@ -163,7 +177,7 @@
 </template>
 
 <script setup lang="ts">
-import { toRefs } from 'vue'
+import { ref, toRefs, watch } from 'vue'
 import CategorySlugPicker from '@/components/CategorySlugPicker.vue'
 import { useAdminRecordForm } from '@/composables/admin/useAdminRecordForm'
 import { resolveApiAssetUrl } from '@/constants/config'
@@ -176,13 +190,32 @@ const props = defineProps<{
   isSaving: boolean
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   reset: []
   save: []
 }>()
 
 const form = defineModel<AdminEditableRecord>({ required: true })
 const { errorMessage } = toRefs(props)
+const isMobileFormOpen = ref(props.isEditing)
+
+watch(
+  () => props.isEditing,
+  (isEditing) => {
+    if (isEditing) {
+      isMobileFormOpen.value = true
+    }
+  },
+)
+
+function toggleMobileForm(): void {
+  isMobileFormOpen.value = !isMobileFormOpen.value
+}
+
+function handleReset(): void {
+  isMobileFormOpen.value = true
+  emit('reset')
+}
 
 // The admin form is schema-driven. These accessors normalize values from the
 // dynamic record before they reach Vue inputs.
