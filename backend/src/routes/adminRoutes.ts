@@ -35,11 +35,13 @@ import {
 } from "../controllers/eventController";
 import {
   deleteReviewById,
-  getReportedReviews,
-  resolveReviewReport,
   restoreReviewById,
   updateReviewById,
 } from "../controllers/reviewController";
+import {
+  getReportedReviews,
+  resolveReviewReport,
+} from "../controllers/reviewReportController";
 import { adminMutationRateLimiter } from "../middleware/rateLimit";
 import { requireAdmin } from "../middleware/requireAdmin";
 import { requirePermission } from "../middleware/requirePermission";

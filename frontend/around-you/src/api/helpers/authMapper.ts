@@ -7,6 +7,8 @@ function isUserRole(value: unknown): value is User['role'] {
 }
 
 function toUserPermissions(value: unknown): User['permissions'] {
+  // API responses are treated as untrusted at this boundary. Filter unknown
+  // permission strings before they enter access-control state.
   if (!Array.isArray(value)) return []
 
   return value.filter(
@@ -17,6 +19,8 @@ function toUserPermissions(value: unknown): User['permissions'] {
 }
 
 export function toAuthenticatedUser(payload: unknown): User | null {
+  // Login/session responses differ slightly between endpoints, so normalize the
+  // user object before the rest of the app consumes auth state.
   if (!payload || typeof payload !== 'object') return null
 
   const rawUser = payload as Record<string, unknown>

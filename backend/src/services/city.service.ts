@@ -4,7 +4,7 @@ import { sanitizeContentPayload, sanitizeContentUpdatePayload } from "../utils/c
 import { getHideUpdate, getRestoreUpdate, normalizeSlug } from "../utils/resourceUtils";
 
 export async function createCityRecord(payload: Record<string, unknown>) {
-  const city = new CityModel(sanitizeContentPayload("city", payload));
+  const city = new CityModel(await sanitizeContentPayload("city", payload));
   return city.save();
 }
 

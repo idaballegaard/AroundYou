@@ -1,14 +1,11 @@
+import { currentUser, getAuthToken } from '@/api/authSession'
+
 interface JwtPayload {
   userID?: string
 }
 
-function getStoredValue(key: string): string | null {
-  if (typeof window === 'undefined') return null
-  return window.localStorage.getItem(key)
-}
-
 function getJwtPayload(): JwtPayload | null {
-  const token = getStoredValue('token')
+  const token = getAuthToken()
   const encodedPayload = token?.split('.')[1]
 
   if (!encodedPayload) return null
@@ -22,7 +19,7 @@ function getJwtPayload(): JwtPayload | null {
 }
 
 export function getStoredUserName(): string {
-  return getStoredValue('userName') ?? 'Guest'
+  return currentUser.value?.userName ?? 'Guest'
 }
 
 export function getStoredUserId(): string | null {
@@ -31,7 +28,7 @@ export function getStoredUserId(): string | null {
 }
 
 export function getStoredUserAvatar(): string | null {
-  return getStoredValue('userAvatar')
+  return currentUser.value?.userAvatar ?? null
 }
 
 export function getUserInitials(userName: string): string {

@@ -25,14 +25,21 @@
       >
         {{ field.label }}
         <div v-if="field.type === 'image'" class="grid gap-2">
+          <!-- Native file input text is browser-localized, so hide it behind a Danish label. -->
           <input
-            class="block w-full text-sm text-slate-700 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-[#094b7b] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
+            class="sr-only"
             type="file"
             accept="image/png,image/jpeg,image/jpg,image/webp"
             :required="field.required && !stringField(field.key)"
             :disabled="isFieldUploading(field.key)"
             @change="uploadSingleImage(field.key, $event)"
           />
+          <span
+            class="inline-flex w-fit cursor-pointer rounded-lg bg-[#094b7b] px-3 py-2 text-sm font-semibold text-white transition"
+            :class="{ 'cursor-not-allowed opacity-60': isFieldUploading(field.key) }"
+          >
+            Vælg billede
+          </span>
           <img
             v-if="stringField(field.key)"
             :src="resolveApiAssetUrl(stringField(field.key))"
@@ -49,14 +56,21 @@
           </button>
         </div>
         <div v-else-if="field.type === 'image-list'" class="grid gap-2">
+          <!-- Multiple uploads share the same custom-label pattern as single image fields. -->
           <input
-            class="block w-full text-sm text-slate-700 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-[#094b7b] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
+            class="sr-only"
             type="file"
             multiple
             accept="image/png,image/jpeg,image/jpg,image/webp"
             :disabled="isFieldUploading(field.key)"
             @change="uploadImageList(field.key, $event)"
           />
+          <span
+            class="inline-flex w-fit cursor-pointer rounded-lg bg-[#094b7b] px-3 py-2 text-sm font-semibold text-white transition"
+            :class="{ 'cursor-not-allowed opacity-60': isFieldUploading(field.key) }"
+          >
+            Vælg billeder
+          </span>
           <div v-if="arrayField(field.key).length" class="grid grid-cols-2 gap-2">
             <div
               v-for="(image, index) in arrayField(field.key)"
@@ -170,6 +184,8 @@ defineEmits<{
 const form = defineModel<AdminEditableRecord>({ required: true })
 const { errorMessage } = toRefs(props)
 
+// The admin form is schema-driven. These accessors normalize values from the
+// dynamic record before they reach Vue inputs.
 const {
   arrayField,
   booleanField,

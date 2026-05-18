@@ -16,6 +16,8 @@ export type SelectedSearchMapMarker = Pick<SearchMapMarker, 'id' | 'title' | 'ty
 export const RESULTS_PER_PAGE = 8
 
 export const getInitialSearchTypes = (routeType: unknown): SearchFilters['types'] => {
+  // The home page can deep-link into search with ?type=event/attraction; ignore
+  // unknown query values instead of letting them leak into filters.
   const type = Array.isArray(routeType) ? routeType[0] : routeType
 
   return type === 'event' || type === 'attraction' ? [type] : []
@@ -48,6 +50,8 @@ export const getSearchResultDescription = (
 }
 
 export const getVisibleSearchItems = (results: SearchResult[], citySelectedFromMap: string) => {
+  // Selecting a city marker uses that city as a location filter, so remove the
+  // city card itself and show the matching experiences.
   if (!citySelectedFromMap) {
     return results
   }
@@ -86,6 +90,8 @@ export const getSearchResultCardClass = (id: string, selectedResultId: string | 
 }
 
 export const toSearchResultCard = (item: SearchResult): CardComponentItem => {
+  // SearchResult is map/filter oriented; CardComponentItem is presentation
+  // oriented. Keep that conversion centralized here.
   return {
     id: item.id,
     name: item.title,
@@ -108,6 +114,8 @@ export const getSelectedCityCenter = (
   location: string,
   cityCoordinates: Record<string, Coordinates>,
 ): MapCoordinates | null => {
+  // Location text is user-editable, so only recenter the map when it exactly
+  // matches a known city option.
   const selectedLocation = location.trim().toLowerCase()
 
   if (!selectedLocation) {

@@ -2,11 +2,12 @@ import { defineComponent, nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { useReviewSection } from '@/composables/useReviewSection'
+import { useReviewSection } from '@/composables/reviews/useReviewSection'
 import type { ReviewItem } from '@/api/reviews.api'
 
 const mocks = vi.hoisted(() => ({
   createReview: vi.fn(),
+  deleteReview: vi.fn(),
   getReviewsByTarget: vi.fn(),
   likeReview: vi.fn(),
   reportReview: vi.fn(),
@@ -19,6 +20,7 @@ vi.mock('@/api/reviews.api', async () => {
   return {
     ...actual,
     createReview: mocks.createReview,
+    deleteReview: mocks.deleteReview,
     getReviewsByTarget: mocks.getReviewsByTarget,
     likeReview: mocks.likeReview,
     reportReview: mocks.reportReview,
@@ -93,6 +95,21 @@ describe('useReviewSection', () => {
     expect(state.isReviewReported('review-1')).toBe(true)
     expect(state.reportModalOpen.value).toBe(false)
     expect(state.reviews.value[0]).toEqual(updatedReview)
+
+    wrapper.unmount()
+  })
+
+  it('self-deletes a review by hiding it and removing it locally', async () => {
+    mocks.deleteReview.mockResolvedValue({ ...review, isHidden: true })
+
+    const { state, wrapper } = mountReviewHarness()
+    await nextTick()
+    await nextTick()
+
+    await state.deleteOwnReview(review)
+
+    expect(mocks.deleteReview).toHaveBeenCalledWith('review-1')
+    expect(state.reviews.value).toEqual([])
 
     wrapper.unmount()
   })

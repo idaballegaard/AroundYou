@@ -1,4 +1,5 @@
 import { apiRequest, jsonHeaders } from '@/api/http'
+import { getAuthToken } from '@/api/authSession'
 import type {
   ContactTicket,
   ContactTicketCategoryFilter,
@@ -6,14 +7,10 @@ import type {
   CreateContactTicketPayload,
 } from '@/types/contact-ticket'
 
-function getToken(): string | null {
-  return localStorage.getItem('token')
-}
-
 export function createContactTicket(payload: CreateContactTicketPayload): Promise<ContactTicket> {
   return apiRequest<ContactTicket>('/contact/tickets', {
     method: 'POST',
-    token: getToken(),
+    token: getAuthToken(),
     headers: jsonHeaders(),
     body: JSON.stringify(payload),
   })
@@ -30,21 +27,21 @@ export function fetchAdminContactTickets(
   }
 
   return apiRequest<ContactTicket[]>(`/admin/contact/tickets?${params.toString()}`, {
-    token: getToken(),
+    token: getAuthToken(),
   })
 }
 
 export function completeContactTicket(id: string): Promise<ContactTicket> {
   return apiRequest<ContactTicket>(`/admin/contact/tickets/${encodeURIComponent(id)}/complete`, {
     method: 'PATCH',
-    token: getToken(),
+    token: getAuthToken(),
   })
 }
 
 export function rejectContactTicket(id: string, reason: string): Promise<ContactTicket> {
   return apiRequest<ContactTicket>(`/admin/contact/tickets/${encodeURIComponent(id)}/reject`, {
     method: 'PATCH',
-    token: getToken(),
+    token: getAuthToken(),
     headers: jsonHeaders(),
     body: JSON.stringify({ reason }),
   })
@@ -53,20 +50,20 @@ export function rejectContactTicket(id: string, reason: string): Promise<Contact
 export function markContactTicketSeen(id: string): Promise<ContactTicket> {
   return apiRequest<ContactTicket>(`/admin/contact/tickets/${encodeURIComponent(id)}/seen`, {
     method: 'PATCH',
-    token: getToken(),
+    token: getAuthToken(),
   })
 }
 
 export function startContactTicketWork(id: string): Promise<ContactTicket> {
   return apiRequest<ContactTicket>(`/admin/contact/tickets/${encodeURIComponent(id)}/start`, {
     method: 'PATCH',
-    token: getToken(),
+    token: getAuthToken(),
   })
 }
 
 export function reopenContactTicket(id: string): Promise<ContactTicket> {
   return apiRequest<ContactTicket>(`/admin/contact/tickets/${encodeURIComponent(id)}/reopen`, {
     method: 'PATCH',
-    token: getToken(),
+    token: getAuthToken(),
   })
 }

@@ -7,6 +7,9 @@
       :model-value="form"
       :submitting="submitting"
       :submit-error="submitError"
+      :user-avatar="displayUserAvatar"
+      :user-initials="avatarInitials"
+      :user-name="userName"
       @update:model-value="form = $event"
       @submit="submitReview"
     />
@@ -37,17 +40,21 @@
         :key="review._id"
         :review="review"
         :is-authenticated="isAuthenticated"
+        :current-user-avatar="displayUserAvatar"
         :user-name="userName"
         :is-editing="editingId === review._id"
         :edit-form="editForm"
         :edit-saving="editSaving"
         :edit-error="editError"
+        :delete-loading="deleteLoading === review._id"
+        :delete-error="deleteErrorId === review._id ? deleteError : null"
         :is-reported="isReviewReported(review._id)"
         :has-liked="hasLiked(review)"
         :like-loading="likeLoading === review._id"
         @start-edit="startEdit(review)"
         @cancel-edit="cancelEdit"
         @save-edit="saveEdit(review._id)"
+        @delete-review="deleteOwnReview(review)"
         @open-report="openReportModal(review)"
         @toggle-like="toggleLike(review)"
         @update:edit-form="editForm = $event"
@@ -68,14 +75,15 @@
 </template>
 
 <script setup lang="ts">
-import { toRef, watch } from 'vue'
+import { computed, toRef, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import ReportReviewModal from '@/components/reviews/ReportReviewModal.vue'
 import ReviewForm from '@/components/reviews/ReviewForm.vue'
 import ReviewItem from '@/components/reviews/ReviewItem.vue'
-import { useReviewSection } from '@/composables/useReviewSection'
+import { useReviewSection } from '@/composables/reviews/useReviewSection'
 import { useAuth } from '@/composables/useAuth'
 import { type ReviewTargetType } from '@/api/reviews.api'
+import { resolveApiAssetUrl } from '@/constants/config'
 
 const props = defineProps<{
   targetId: string
@@ -86,7 +94,8 @@ const emit = defineEmits<{
   (e: 'averageRating', value: number | null): void
 }>()
 
-const { isAuthenticated, userName } = useAuth()
+const { avatarInitials, isAuthenticated, userAvatar, userName } = useAuth()
+const displayUserAvatar = computed(() => resolveApiAssetUrl(userAvatar.value?.trim() || ''))
 
 const {
   reviews,
@@ -101,6 +110,9 @@ const {
   editForm,
   editSaving,
   editError,
+  deleteLoading,
+  deleteError,
+  deleteErrorId,
   reportModalOpen,
   reportTargetReview,
   reportForm,
@@ -113,6 +125,7 @@ const {
   closeReportModal,
   submitReport,
   saveEdit,
+  deleteOwnReview,
   submitReview,
   hasLiked,
   toggleLike,

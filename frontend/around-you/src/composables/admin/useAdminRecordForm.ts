@@ -1,5 +1,6 @@
 import { computed, onMounted, ref, type Ref } from 'vue'
 
+import { getAuthToken } from '@/api/authSession'
 import { uploadImageFile } from '@/api/contentApi'
 import { fetchAttractions, fetchEvents } from '@/api/searchApi'
 import type { AdminEditableRecord, AdminFieldType } from '@/types/admin'
@@ -17,12 +18,17 @@ import {
 } from './adminRecordForm.helpers'
 
 export function useAdminRecordForm(form: Ref<AdminEditableRecord>, errorMessage: Ref<string>) {
+  // Field accessors hide the dynamic record shape from AdminRecordForm.vue, so
+  // the template can stay declarative even though each collection has different
+  // field types.
   const uploadError = ref('')
   const uploadingFields = ref<string[]>([])
   const categoryOptions = ref<string[]>([])
 
   const fetchCategoryOptions = async () => {
     try {
+      // Reuse live content categories to prevent admins from creating near-
+      // duplicate slugs when editing events and attractions.
       const [events, attractions] = await Promise.all([fetchEvents(), fetchAttractions()])
       const unique = new Set(
         [...events, ...attractions]
@@ -98,8 +104,10 @@ export function useAdminRecordForm(form: Ref<AdminEditableRecord>, errorMessage:
   }
 
   async function uploadFiles(files: File[]): Promise<string[]> {
+    // Compression is done client-side to keep upload payloads predictable and
+    // to match the create-content flow.
     validateAdminImageFiles(files)
-    const token = localStorage.getItem('token')
+    const token = getAuthToken()
     const compressedFiles = await Promise.all(files.map((file) => compressImageFile(file)))
     return Promise.all(compressedFiles.map((file) => uploadImageFile(file, token)))
   }
@@ -122,6 +130,8 @@ export function useAdminRecordForm(form: Ref<AdminEditableRecord>, errorMessage:
     } catch (error) {
       uploadError.value = error instanceof Error ? error.message : 'Billedet kunne ikke uploades.'
     } finally {
+      // Reset the native file input so choosing the same image again still
+      // triggers a change event.
       stopUploading(key)
       if (target) target.value = ''
     }
@@ -136,6 +146,8 @@ export function useAdminRecordForm(form: Ref<AdminEditableRecord>, errorMessage:
 
     try {
       const imageUrls = await uploadFiles(files)
+      // Image-list uploads append rather than replace so admins can add photos
+      // in batches.
       form.value[key] = [...arrayField(key), ...imageUrls]
     } catch (error) {
       uploadError.value = error instanceof Error ? error.message : 'Billederne kunne ikke uploades.'

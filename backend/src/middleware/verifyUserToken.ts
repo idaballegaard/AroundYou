@@ -7,20 +7,49 @@ import {
   normalizePermissions,
   normalizeRole,
 } from "../utils/accessControl";
+import { AUTH_COOKIE_NAME } from "../services/authToken.service";
+
+function getCookieValue(cookieHeader: string | undefined, name: string): string | null {
+  // Avoid adding a cookie parser dependency for one known auth cookie.
+  if (!cookieHeader) {
+    return null;
+  }
+
+  const cookie = cookieHeader
+    .split(";")
+    .map((entry) => entry.trim())
+    .find((entry) => entry.startsWith(`${name}=`));
+
+  if (!cookie) {
+    return null;
+  }
+
+  return decodeURIComponent(cookie.slice(name.length + 1));
+}
+
+function getRequestToken(req: Request): string | null {
+  const authHeader = req.headers.authorization;
+
+  if (authHeader?.startsWith("Bearer ")) {
+    return authHeader.split(" ")[1];
+  }
+
+  // The frontend keeps tokens in memory, so refresh recovery depends on this
+  // HttpOnly cookie fallback.
+  return getCookieValue(req.headers.cookie, AUTH_COOKIE_NAME);
+}
 
 export async function verifyToken(
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
-  const authHeader = req.headers.authorization;
+  const token = getRequestToken(req);
 
-  if (!authHeader?.startsWith("Bearer ")) {
+  if (!token) {
     res.status(401).json({ message: "No token provided" });
     return;
   }
-
-  const token = authHeader.split(" ")[1];
 
   try {
     const decoded = jwt.verify(token, process.env.TOKEN_SECRET as string);
@@ -31,6 +60,8 @@ export async function verifyToken(
     }
 
     const payload = decoded as JwtUser;
+    // Re-read the user on every authenticated request so role/permission changes
+    // and account restrictions take effect before the JWT naturally expires.
     const user = await UserModel.findById(payload.userID).select(
       "userName email firstName lastName role permissions isRestricted",
     );
@@ -47,6 +78,8 @@ export async function verifyToken(
     );
 
     req.user = {
+      // Downstream controllers trust req.user as the normalized authorization
+      // context, not as a full user profile.
       userID: payload.userID,
       userName: user.userName,
       email: user.email,

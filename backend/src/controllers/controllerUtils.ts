@@ -10,6 +10,8 @@ export function getRouteParam(value: string | string[] | undefined): string {
 }
 
 export function visibleFilter(req: Request): Record<string, unknown> {
+  // Public endpoints never expose soft-deleted records. Admin endpoints can
+  // explicitly request hidden/all records for moderation screens.
   if (!req.originalUrl.startsWith("/api/admin/")) {
     return { isHidden: { $ne: true } };
   }

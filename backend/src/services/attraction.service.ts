@@ -4,7 +4,7 @@ import { sanitizeContentPayload, sanitizeContentUpdatePayload } from "../utils/c
 import { getHideUpdate, getRestoreUpdate } from "../utils/resourceUtils";
 
 export async function createAttractionRecord(payload: Record<string, unknown>) {
-  const attraction = new AttractionModel(sanitizeContentPayload("attraction", payload));
+  const attraction = new AttractionModel(await sanitizeContentPayload("attraction", payload));
   return attraction.save();
 }
 

@@ -1,10 +1,11 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
+import { getAuthToken } from '@/api/authSession'
 import { uploadImageFile } from '@/api/contentApi'
 import { restrictUserProfile } from '@/api/user'
 import { useAuth } from '@/composables/useAuth'
-import { useUser } from '@/composables/useUser'
+import { useUser } from '@/composables/profile/useUser'
 import { compressImageFile, isAllowedImageType } from '@/utils/imageCompressor'
 import {
   AVATAR_UPLOAD_ERROR_MESSAGE,
@@ -26,6 +27,8 @@ type AvatarInputElement = HTMLInputElement & {
 }
 
 export const useUserProfileView = () => {
+  // Owns the profile edit workflow, including avatar preview lifecycle and the
+  // soft-delete/restriction confirmation modal.
   const router = useRouter()
   const { user, loading, error, fetchUser, updateUser } = useUser()
   const { logout } = useAuth()
@@ -45,6 +48,8 @@ export const useUserProfileView = () => {
   const initials = computed(() => getProfileInitials(user.value))
 
   const revokeAvatarPreview = () => {
+    // Object URLs are tied to browser memory; revoke before replacing or
+    // unmounting to avoid leaking selected avatar previews.
     if (avatarPreview.value.startsWith('blob:')) {
       URL.revokeObjectURL(avatarPreview.value)
     }
@@ -76,16 +81,20 @@ export const useUserProfileView = () => {
 
     hasInvalidAvatarFile.value = false
     revokeAvatarPreview()
+    // Keep the preview local until save, so selecting a file does not mutate the
+    // persisted profile unless the user submits the form.
     avatarFile.value = file
     avatarPreview.value = URL.createObjectURL(file)
   }
 
   const uploadAvatarIfSelected = async () => {
+    // Avatar upload is separated from profile update because the user endpoint
+    // stores only the uploaded image URL.
     if (!avatarFile.value || !user.value) {
       return true
     }
 
-    const token = localStorage.getItem('token')
+    const token = getAuthToken()
 
     if (!token) {
       avatarError.value = MISSING_AVATAR_AUTH_MESSAGE
@@ -144,7 +153,9 @@ export const useUserProfileView = () => {
   }
 
   const confirmDeleteAccount = async () => {
-    const token = localStorage.getItem('token')
+    // Account deletion is implemented as backend restriction, then local logout,
+    // so the user loses access immediately without removing historical content.
+    const token = getAuthToken()
 
     if (!token) {
       deleteAccountError.value = MISSING_DELETE_AUTH_MESSAGE

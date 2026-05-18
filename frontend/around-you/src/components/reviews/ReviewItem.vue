@@ -1,15 +1,28 @@
 <template>
   <li class="rounded-2xl border border-[#C1D2DE]/70 bg-white p-6 shadow-sm">
     <div class="mb-3 flex items-start justify-between gap-4">
-      <div>
-        <div class="flex items-center gap-2">
-          <p class="text-sm font-semibold text-[#de5826]">{{ review.author }}</p>
-          <span
-            v-if="review.edited"
-            class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-400"
-          >Redigeret</span>
+      <div class="flex items-start gap-3">
+        <div
+          class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#094b7b] to-[#de5826] text-xs font-black text-white"
+        >
+          <img
+            v-if="displayAuthorAvatar"
+            :src="displayAuthorAvatar"
+            :alt="`${review.author} avatar`"
+            class="h-full w-full object-cover"
+          />
+          <span v-else>{{ authorInitials }}</span>
         </div>
-        <p class="text-xs text-slate-400">{{ formatDate(review.createdAt) }}</p>
+        <div>
+          <div class="flex items-center gap-2">
+            <p class="text-sm font-semibold text-[#de5826]">{{ review.author }}</p>
+            <span
+              v-if="review.edited"
+              class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-400"
+            >Redigeret</span>
+          </div>
+          <p class="text-xs text-slate-400">{{ formatDate(review.createdAt) }}</p>
+        </div>
       </div>
       <div class="flex items-center gap-3">
         <div class="flex shrink-0 text-[#de5826]">
@@ -33,6 +46,13 @@
           class="text-xs text-slate-400 underline underline-offset-2 hover:text-[#094b7b]"
           @click="emit('start-edit')"
         >Rediger</button>
+        <button
+          v-if="review.author === userName"
+          type="button"
+          class="text-xs text-slate-400 underline underline-offset-2 hover:text-[#de5826] disabled:cursor-not-allowed disabled:text-slate-300"
+          :disabled="deleteLoading"
+          @click="confirmDelete"
+        >{{ deleteLoading ? 'Sletter...' : 'Slet' }}</button>
       </div>
     </div>
 
@@ -118,6 +138,10 @@
       />
     </template>
 
+    <p v-if="deleteError && review.author === userName" class="mb-3 text-xs text-[#de5826]">
+      {{ deleteError }}
+    </p>
+
     <button
       type="button"
       :disabled="!isAuthenticated || likeLoading"
@@ -136,6 +160,7 @@
 import { computed } from 'vue'
 import type { ReviewItem } from '@/api/reviews.api'
 import { resolveApiAssetUrl } from '@/constants/config'
+import { getUserInitials } from '@/utils/auth'
 
 export type EditReviewFormModel = {
   title: string
@@ -147,11 +172,14 @@ export type EditReviewFormModel = {
 const props = defineProps<{
   review: ReviewItem
   isAuthenticated: boolean
+  currentUserAvatar: string
   userName: string
   isEditing: boolean
   editForm: EditReviewFormModel
   editSaving: boolean
   editError: string | null
+  deleteLoading: boolean
+  deleteError: string | null
   isReported: boolean
   hasLiked: boolean
   likeLoading: boolean
@@ -161,18 +189,38 @@ const emit = defineEmits<{
   (e: 'start-edit'): void
   (e: 'cancel-edit'): void
   (e: 'save-edit'): void
+  (e: 'delete-review'): void
   (e: 'open-report'): void
   (e: 'toggle-like'): void
   (e: 'update:editForm', value: EditReviewFormModel): void
 }>()
 
 const resolvedReviewImage = computed(() => resolveApiAssetUrl(props.review.image))
+const displayAuthorAvatar = computed(() => {
+  // Prefer the avatar supplied with the review. While older API responses roll
+  // out, fall back to the current session avatar for the logged-in user's own
+  // reviews, then initials.
+  const authorAvatar = props.review.authorAvatar?.trim()
+
+  if (authorAvatar) {
+    return resolveApiAssetUrl(authorAvatar)
+  }
+
+  return props.review.author === props.userName ? props.currentUserAvatar : ''
+})
+const authorInitials = computed(() => getUserInitials(props.review.author))
 
 function updateField<K extends keyof EditReviewFormModel>(key: K, value: EditReviewFormModel[K]) {
   emit('update:editForm', {
     ...props.editForm,
     [key]: value,
   })
+}
+
+function confirmDelete() {
+  if (window.confirm('Er du sikker på, at du vil slette din anmeldelse?')) {
+    emit('delete-review')
+  }
 }
 
 function formatDate(dateStr: string): string {

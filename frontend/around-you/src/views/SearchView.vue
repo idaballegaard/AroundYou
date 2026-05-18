@@ -68,7 +68,7 @@
   </main>
 </template>
 <script setup lang="ts">
-import LocationMap from '@/components/LocationMap.vue'
+import LocationMap from '@/components/map/LocationMap.vue'
 import SearchFilter from '@/components/SearchFilter.vue'
 import SearchResultCard from '@/components/SearchResultCard.vue'
 import { useSearchView } from '@/composables/search/useSearchView'

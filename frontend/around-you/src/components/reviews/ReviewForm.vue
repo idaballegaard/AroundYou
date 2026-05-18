@@ -1,6 +1,22 @@
 <template>
   <div class="mb-8 rounded-2xl border border-[#C1D2DE]/70 bg-white p-6 shadow-sm">
-    <h3 class="mb-4 text-base font-semibold text-[#094b7b]">Skriv en anmeldelse</h3>
+    <div class="mb-4 flex items-center gap-3">
+      <div
+        class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#094b7b] to-[#de5826] text-sm font-black text-white"
+      >
+        <img
+          v-if="userAvatar"
+          :src="userAvatar"
+          :alt="`${userName} avatar`"
+          class="h-full w-full object-cover"
+        />
+        <span v-else>{{ userInitials }}</span>
+      </div>
+      <div>
+        <h3 class="text-base font-semibold text-[#094b7b]">Skriv en anmeldelse</h3>
+        <p class="text-sm font-semibold text-[#de5826]">{{ userName }}</p>
+      </div>
+    </div>
 
     <form @submit.prevent="emit('submit')" class="space-y-4">
       <div>
@@ -87,6 +103,9 @@ const props = defineProps<{
   modelValue: ReviewFormModel
   submitting: boolean
   submitError: string | null
+  userAvatar: string
+  userInitials: string
+  userName: string
 }>()
 
 const emit = defineEmits<{

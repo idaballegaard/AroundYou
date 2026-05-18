@@ -105,7 +105,8 @@ export function setupDocs(app: Application) {
 
   const options = {
     swaggerDefinition,
-    apis: ["src/routes/*.ts", "src/controllers/*.ts"],
+    // Route annotations live in src/docs so route files stay focused on Express wiring.
+    apis: ["src/docs/*.ts", "src/routes/*.ts", "src/controllers/*.ts"],
     failOnErrors: true,
   };
 

@@ -1,13 +1,10 @@
 import { apiRequest, jsonHeaders } from '@/api/http'
+import { getAuthToken } from '@/api/authSession'
 import type {
   ContentSuggestion,
   ContentSuggestionPayload,
   ContentSuggestionType,
 } from '@/types/content-suggestion'
-
-function getToken(): string | null {
-  return localStorage.getItem('token')
-}
 
 export function createContentSuggestion(
   type: ContentSuggestionType,
@@ -15,7 +12,7 @@ export function createContentSuggestion(
 ): Promise<ContentSuggestion> {
   return apiRequest<ContentSuggestion>('/suggestions', {
     method: 'POST',
-    token: getToken(),
+    token: getAuthToken(),
     headers: jsonHeaders(),
     body: JSON.stringify({ type, payload }),
   })
@@ -23,21 +20,21 @@ export function createContentSuggestion(
 
 export function fetchPendingContentSuggestions(): Promise<ContentSuggestion[]> {
   return apiRequest<ContentSuggestion[]>('/admin/suggestions?status=pending', {
-    token: getToken(),
+    token: getAuthToken(),
   })
 }
 
 export function approveContentSuggestion(id: string): Promise<unknown> {
   return apiRequest(`/admin/suggestions/${id}/approve`, {
     method: 'POST',
-    token: getToken(),
+    token: getAuthToken(),
   })
 }
 
 export function rejectContentSuggestion(id: string, reason: string): Promise<ContentSuggestion> {
   return apiRequest<ContentSuggestion>(`/admin/suggestions/${id}/reject`, {
     method: 'POST',
-    token: getToken(),
+    token: getAuthToken(),
     headers: jsonHeaders(),
     body: JSON.stringify({ reason }),
   })

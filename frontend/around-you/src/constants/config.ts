@@ -15,6 +15,8 @@ export function resolveApiAssetUrl(url: string): string {
   if (!trimmedUrl) return trimmedUrl
 
   if (trimmedUrl.startsWith('/api/')) {
+    // Normalize persisted API-relative assets to the current environment's API
+    // origin, so production data still works in local development.
     return `${API_BASE_URL}${trimmedUrl.slice('/api'.length)}`
   }
 
@@ -29,6 +31,8 @@ export function resolveApiAssetUrl(url: string): string {
       parsedUrl.pathname.startsWith('/api/')
 
     if (isLoopbackApiUrl) {
+      // Some older records contain localhost API URLs. Rewrite only loopback API
+      // URLs and leave external image URLs untouched.
       return `${API_BASE_URL}${parsedUrl.pathname.slice('/api'.length)}${parsedUrl.search}${parsedUrl.hash}`
     }
   } catch {

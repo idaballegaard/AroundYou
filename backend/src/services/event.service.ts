@@ -4,7 +4,7 @@ import { sanitizeContentPayload, sanitizeContentUpdatePayload } from "../utils/c
 import { getHideUpdate, getRestoreUpdate } from "../utils/resourceUtils";
 
 export async function createEventRecord(payload: Record<string, unknown>) {
-  const event = new EventModel(sanitizeContentPayload("event", payload));
+  const event = new EventModel(await sanitizeContentPayload("event", payload));
   return event.save();
 }
 

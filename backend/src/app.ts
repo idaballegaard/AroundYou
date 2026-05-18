@@ -1,4 +1,4 @@
-import express, { Application } from "express";
+import express, { Application, ErrorRequestHandler } from "express";
 import dotenvFlow from "dotenv-flow";
 import cors from "cors";
 
@@ -27,15 +27,13 @@ function getAllowedCorsOrigins(): string[] {
   return configuredOrigins.length ? configuredOrigins : DEFAULT_CORS_ORIGINS;
 }
 
-/**
- * CORS configuration
- */
 function setupCors() {
   const allowedOrigins = new Set(getAllowedCorsOrigins());
 
   app.use(
     cors({
       origin(origin, callback) {
+        // Allow server-to-server/no-origin requests while still restricting browser CORS.
         if (!origin || allowedOrigins.has(origin)) {
           callback(null, true);
           return;
@@ -51,30 +49,48 @@ function setupCors() {
   );
 }
 
-/**
- * Middleware setup
- */
 function setupMiddleware() {
   app.use(express.json({ limit: "2mb" }));
 }
 
-/**
- * Routes setup
- */
+function setupJsonParseErrorHandler() {
+  const jsonParseErrorHandler: ErrorRequestHandler = (err, _req, res, next) => {
+    const parseError = err as SyntaxError & {
+      status?: number;
+      type?: string;
+    };
+
+    if (
+      parseError instanceof SyntaxError &&
+      parseError.status === 400 &&
+      parseError.type === "entity.parse.failed"
+    ) {
+      res.status(400).json({
+        message: "Ugyldig JSON. Tjek at request body er korrekt formateret.",
+      });
+      return;
+    }
+
+    next(err);
+  };
+
+  app.use(jsonParseErrorHandler);
+}
+
 function setupRoutes() {
   app.use("/api", routes);
 }
 
-/**
- * Server bootstrap
- */
 export async function startServer() {
   setupCors();
   setupMiddleware();
+  setupJsonParseErrorHandler();
   setupRoutes();
 
   setupDocs(app);
 
+  // The server only starts after MongoDB and admin bootstrap complete so tests
+  // and health checks do not hit a partially initialized API.
   await connectDB();
   await ensureDefaultAdminUser();
 
