@@ -12,10 +12,13 @@ const ROLE_PERMISSION_MAP: Record<UserRole, UserPermission[]> = {
 };
 
 export function normalizeRole(role: unknown): UserRole {
+  // Unknown roles are intentionally downgraded to user instead of trusted.
   return role === "admin" ? "admin" : "user";
 }
 
 export function normalizePermissions(permissions: unknown): UserPermission[] {
+  // JWT/database permission arrays are treated as untrusted input at the auth
+  // boundary and filtered against the enum.
   if (!Array.isArray(permissions)) {
     return [];
   }
@@ -33,5 +36,6 @@ export function getEffectivePermissions(
   role: UserRole,
   permissions: UserPermission[],
 ): UserPermission[] {
+  // Explicit permissions are additive; roles provide the baseline.
   return Array.from(new Set([...ROLE_PERMISSION_MAP[role], ...permissions]));
 }

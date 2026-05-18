@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { getAuthToken } from '@/api/authSession'
 import { createAttraction, createCity, createEvent, uploadImageFile } from '@/api/contentApi'
 import { createContentSuggestion } from '@/api/contentSuggestions.api'
 import { useAuthService } from '@/api/authService'
@@ -28,13 +29,13 @@ const splitList = (value: string) =>
     .map((item) => item.trim())
     .filter(Boolean)
 
-const getAuthToken = () => localStorage.getItem('token')
-
 type ContentSubmissionDestination = 'created' | 'suggested'
 
 const resolveGpsPosition = async (address: string, city: string) => {
+  // Events and attractions are entered with address/city fields but stored with
+  // gpsPosition so maps can render without geocoding on every page load.
   if (!address.trim() || !city.trim()) {
-    throw new Error('Please enter both address and city.')
+    throw new Error('Indtast både adresse og by.')
   }
 
   const location = await getGeocodedCoordinates(address.trim(), city.trim())
@@ -42,6 +43,8 @@ const resolveGpsPosition = async (address: string, city: string) => {
 }
 
 const resolveCityGpsPosition = async (city: string) => {
+  // Cities are geocoded by name because the create flow does not ask for a
+  // street address.
   if (!city.trim()) {
     throw new Error('Indtast en by.')
   }
@@ -51,6 +54,8 @@ const resolveCityGpsPosition = async (city: string) => {
 }
 
 export const validateCityForm = (cityForm: Pick<CreateCityForm, 'tagLine'>) => {
+  // Keep tagline validation local to the city branch because event and
+  // attraction submissions do not share this field.
   const tagLine = cityForm.tagLine.trim()
 
   if (!tagLine) {
@@ -74,6 +79,8 @@ export const useCreateContentSubmit = (
   attractionImageArrayFiles: CreateContentFileArrayRef,
   compressImageFiles: (files: File[]) => Promise<File[]>,
 ) => {
+  // The submit composable owns all backend-facing transformations: validation,
+  // image compression/upload, geocoding, and role-based destination choice.
   const isSubmitting = ref(false)
   const isUploadingImage = ref(false)
   const { currentUser, isAdmin } = useAuthService()
@@ -83,6 +90,8 @@ export const useCreateContentSubmit = (
     payload: ContentSuggestionPayload,
     token: string | null,
   ): Promise<ContentSubmissionDestination> => {
+    // Admin users write directly to canonical collections. Regular users submit
+    // suggestions so admins can review before publishing.
     if (currentUser.value?.role === 'admin' || isAdmin.value) {
       if (type === 'event') {
         await createEvent(payload as EventPayload, token)
@@ -101,7 +110,7 @@ export const useCreateContentSubmit = (
 
   const submitEvent = async (): Promise<ContentSubmissionDestination> => {
     if (!eventHeroImageFile.value) {
-      throw new Error('Upload et billede til dette event.')
+      throw new Error('Upload et billede til dette arrangement.')
     }
 
     const token = getAuthToken()
@@ -110,6 +119,8 @@ export const useCreateContentSubmit = (
 
     isUploadingImage.value = true
 
+    // Upload the hero and optional gallery images before building the payload,
+    // because the backend expects persisted image URLs rather than File objects.
     const compressedHeroImage = await compressImageFile(eventHeroImageFile.value)
     const compressedImageArray = await compressImageFiles(eventImageArrayFiles.value)
     const heroImage = await uploadImageFile(compressedHeroImage, token)
@@ -150,6 +161,7 @@ export const useCreateContentSubmit = (
 
     isUploadingImage.value = true
 
+    // Attractions share the event image workflow but do not carry date fields.
     const compressedHeroImage = await compressImageFile(attractionHeroImageFile.value)
     const compressedImageArray = await compressImageFiles(attractionImageArrayFiles.value)
     const heroImage = await uploadImageFile(compressedHeroImage, token)
@@ -194,13 +206,14 @@ export const useCreateContentSubmit = (
 
     isUploadingImage.value = true
 
+    // Cities only have a hero image today, so no imageArray payload is sent.
     const compressedHeroImage = await compressImageFile(cityHeroImageFile.value)
     const heroImage = await uploadImageFile(compressedHeroImage, token)
 
     const payload: CityPayload = {
       name: normalizeText(cityForm.name, { field: 'Navn', required: true, min: 3, max: 255 }),
       tagLine: normalizeText(cityForm.tagLine, {
-        field: 'Byens tagline',
+        field: 'Byens slogan',
         required: true,
         min: 20,
         max: 100,
@@ -224,6 +237,8 @@ export const useCreateContentSubmit = (
   }
 
   const submitSelected = async (setMessage: CreateContentMessageStateSetter) => {
+    // Single public entry point for the view. The selected tab controls which
+    // branch runs, but success/error messaging remains consistent.
     try {
       isSubmitting.value = true
       setMessage('', 'info')
@@ -247,6 +262,8 @@ export const useCreateContentSubmit = (
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Kunne ikke sende forslaget.', 'error')
     } finally {
+      // Image upload state spans compression and upload work for the selected
+      // content type, so it is reset here after all submit branches finish.
       isUploadingImage.value = false
       isSubmitting.value = false
     }

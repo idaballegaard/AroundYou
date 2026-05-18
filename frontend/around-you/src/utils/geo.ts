@@ -143,6 +143,8 @@ export function parseGpsPosition(gpsPosition?: string): Coordinates | null {
     .replace(/[″"]/g, ' ')
     .replace(/\s+/g, ' ')
 
+  // Backend records are not fully normalized, so accept DMS, directional, and
+  // plain decimal coordinate formats in that order.
   return (
     parseDmsCoordinates(normalizedGpsPosition) ??
     parseDirectionalCoordinates(normalizedGpsPosition) ??

@@ -28,7 +28,7 @@ export function useLoginView() {
       geo.getLocation()
       await router.push('/')
     } catch (error) {
-      errorMessage.value = error instanceof Error ? error.message : 'Login failed.'
+      errorMessage.value = error instanceof Error ? error.message : 'Login mislykkedes.'
     } finally {
       isSubmitting.value = false
     }

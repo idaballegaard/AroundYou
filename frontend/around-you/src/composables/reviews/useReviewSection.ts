@@ -2,6 +2,7 @@ import { computed, ref, watch, type Ref } from 'vue'
 import { getStoredUserId } from '@/utils/auth'
 import {
   createReview,
+  deleteReview,
   getReviewsByTarget,
   likeReview,
   reportReview,
@@ -34,6 +35,8 @@ export function useReviewSection(options: {
   targetId: Ref<string>
   targetType: Ref<ReviewTargetType>
 }) {
+  // Keeps all review state local to a detail page instance. Mutations update the
+  // local list immediately so ratings and moderation actions feel responsive.
   const { targetId, targetType } = options
 
   const reviews = ref<ReviewItem[]>([])
@@ -50,6 +53,9 @@ export function useReviewSection(options: {
   const editForm = ref<EditReviewFormState>({ title: '', description: '', rating: 0, image: '' })
   const editSaving = ref(false)
   const editError = ref<string | null>(null)
+  const deleteLoading = ref<string | null>(null)
+  const deleteError = ref<string | null>(null)
+  const deleteErrorId = ref<string | null>(null)
 
   const reportModalOpen = ref(false)
   const reportTargetReview = ref<ReviewItem | null>(null)
@@ -85,6 +91,8 @@ export function useReviewSection(options: {
   }
 
   function openReportModal(review: ReviewItem) {
+    // A report is only tracked client-side after success. This prevents users
+    // from repeatedly opening the modal for a review already reported locally.
     if (isReviewReported(review._id)) return
     reportTargetReview.value = review
     reportForm.value = { reason: '', details: '' }
@@ -106,6 +114,8 @@ export function useReviewSection(options: {
     }
     const review = reportTargetReview.value
     const reason = [reportForm.value.reason, reportForm.value.details]
+      // Store a single normalized reason string because the backend accepts one
+      // report message, while the UI separates category and optional details.
       .map((value) => value.trim())
       .filter(Boolean)
       .join(': ')
@@ -161,7 +171,31 @@ export function useReviewSection(options: {
     }
   }
 
+  async function deleteOwnReview(review: ReviewItem) {
+    if (deleteLoading.value) return
+
+    deleteLoading.value = review._id
+    deleteError.value = null
+    deleteErrorId.value = null
+
+    try {
+      await deleteReview(review._id)
+      reviews.value = reviews.value.filter((entry) => entry._id !== review._id)
+
+      if (editingId.value === review._id) {
+        editingId.value = null
+      }
+    } catch (err) {
+      deleteErrorId.value = review._id
+      deleteError.value = err instanceof Error ? err.message : 'Kunne ikke slette anmeldelsen.'
+    } finally {
+      deleteLoading.value = null
+    }
+  }
+
   async function loadReviews() {
+    // Reload when the detail route changes but keep errors scoped to the review
+    // section instead of failing the whole page.
     loading.value = true
     fetchError.value = null
     try {
@@ -206,6 +240,8 @@ export function useReviewSection(options: {
   }
 
   function hasLiked(review: ReviewItem): boolean {
+    // Like ownership is stored as backend user ids in likedBy, so read the id
+    // from the current token rather than comparing display names.
     const userId = getStoredUserId()
     return !!userId && review.likedBy.includes(userId)
   }
@@ -240,6 +276,9 @@ export function useReviewSection(options: {
     editForm,
     editSaving,
     editError,
+    deleteLoading,
+    deleteError,
+    deleteErrorId,
     reportModalOpen,
     reportTargetReview,
     reportForm,
@@ -252,6 +291,7 @@ export function useReviewSection(options: {
     closeReportModal,
     submitReport,
     saveEdit,
+    deleteOwnReview,
     submitReview,
     hasLiked,
     toggleLike,

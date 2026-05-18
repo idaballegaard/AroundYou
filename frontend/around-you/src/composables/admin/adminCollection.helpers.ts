@@ -7,6 +7,8 @@ import type {
 } from '@/types/admin'
 
 export function cloneAdminRecord(record: AdminEditableRecord): AdminEditableRecord {
+  // Admin forms mutate array fields such as categories/images, so clone arrays
+  // when seeding a new form from the shared empty record.
   return Object.fromEntries(
     Object.entries(record).map(([key, value]) => [key, Array.isArray(value) ? [...value] : value]),
   ) as AdminEditableRecord
@@ -16,6 +18,8 @@ export function toEditableAdminRecord(
   record: AdminEditableRecord,
   fields: AdminFieldConfig[],
 ): AdminEditableRecord {
+  // Only include configured fields in the edit form. Backend-only metadata such
+  // as _id, visibility flags, and timestamps stay out of mutation payloads.
   return Object.fromEntries(
     fields.map((field) => [field.key, normalizeAdminValue(record[field.key])]),
   )
@@ -45,6 +49,8 @@ export async function withResolvedGpsPosition(
   const payload: AdminEditableRecord = { ...record }
 
   if (isAddressGeocodedCollection(collection)) {
+    // Attractions and events are stored with gpsPosition, but admins edit the
+    // human-friendly address/city fields.
     const address = getAdminStringValue(payload, 'address')
     const city = getAdminStringValue(payload, 'city')
 
@@ -62,6 +68,8 @@ export async function withResolvedGpsPosition(
   }
 
   if (collection === 'city') {
+    // Cities do not have street addresses; geocoding by name keeps the admin
+    // form consistent with public city creation.
     const name = getAdminStringValue(payload, 'name')
 
     if (!name) {

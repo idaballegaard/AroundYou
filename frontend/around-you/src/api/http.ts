@@ -12,15 +12,26 @@ type CachedGetEntry<T> = {
 const DEFAULT_PUBLIC_GET_CACHE_TTL_MS = 30_000
 const publicGetCache = new Map<string, CachedGetEntry<unknown>>()
 
+/**
+ * Central fetch wrapper for API calls.
+ *
+ * It always sends cookies so the backend can recover auth through the
+ * HttpOnly session cookie, while still allowing callers to pass the in-memory
+ * bearer token for endpoints that need immediate authorization.
+ */
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { token, headers, ...requestOptions } = options
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...requestOptions,
+    // Include the HttpOnly auth cookie while still allowing explicit bearer
+    // tokens for endpoints that need the in-memory token immediately.
+    credentials: 'include',
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },
   })
+  const contentType = response.headers?.get?.('content-type') ?? ''
 
   if (!response.ok) {
     let message = `Request failed for ${path}`
@@ -35,6 +46,12 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     throw new Error(message)
   }
 
+  if (contentType && !contentType.includes('application/json')) {
+    // Catches misconfigured dev proxies where Vite serves index.html for /api
+    // requests, which otherwise fails later as a JSON parse error.
+    throw new Error(`Expected JSON response for ${path}, received ${contentType}`)
+  }
+
   return response.json() as Promise<T>
 }
 
@@ -46,6 +63,8 @@ export function apiGetCached<T>(path: string, ttlMs = DEFAULT_PUBLIC_GET_CACHE_T
     return cached.promise
   }
 
+  // Cache the in-flight promise as well as the completed value so concurrent
+  // public reads share one request. Failed requests are never cached.
   const promise = apiRequest<T>(path).catch((error) => {
     publicGetCache.delete(path)
     throw error
@@ -59,10 +78,19 @@ export function apiGetCached<T>(path: string, ttlMs = DEFAULT_PUBLIC_GET_CACHE_T
   return promise
 }
 
+/**
+ * Clears short-lived public GET cache after mutations that can affect cards,
+ * search results, home sections, or detail pages.
+ */
 export function clearApiCache(): void {
+  // Mutating admin/content calls should clear public GET cache so home/search
+  // views do not show stale records for the full TTL.
   publicGetCache.clear()
 }
 
+/**
+ * Shared JSON header helper so API modules do not drift on content type casing.
+ */
 export function jsonHeaders(): HeadersInit {
   return { 'Content-Type': 'application/json' }
 }

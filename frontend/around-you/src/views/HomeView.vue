@@ -1,13 +1,13 @@
 <template>
   <!-- Map background wrapper -->
   <div
-    class="min-h-screen relative bg-cover bg-center bg-no-repeat py-4 sm:py-[50px]"
+    class="min-h-screen relative bg-cover bg-center bg-no-repeat py-3 sm:py-[50px]"
     style="background-image: url('/danmarkskort_1800x1280.jpg')"
   >
     <div class="pointer-events-none absolute inset-0 bg-[#e8c7aa]/55"></div>
 
     <!-- White content card -->
-    <div class="relative z-10 mx-4 sm:mx-[50px] bg-white shadow-2xl rounded-xl overflow-hidden">
+    <div class="relative z-10 mx-3 overflow-hidden rounded-lg bg-white shadow-2xl sm:mx-[50px] sm:rounded-xl">
       <HomeContentSection
         v-if="showNearbySection"
         :title="`Oplevelser nær ${userLocation}`"
@@ -17,8 +17,8 @@
         :cards="nearbyCards"
         loading-text="Henter seværdigheder nær din lokation..."
         empty-text="Der blev ikke fundet seværdigheder i nærheden."
-        title-class="text-2xl sm:text-5xl font-extrabold text-[#094b7b] text-center mb-2"
-        description-class="text-base sm:text-xl text-gray-500 text-center max-w-3xl mx-auto mb-8"
+        title-class="text-xl leading-tight sm:text-5xl font-extrabold text-[#094b7b] text-center mb-2"
+        description-class="text-sm leading-6 sm:text-xl text-gray-500 text-center max-w-3xl mx-auto mb-6 sm:mb-8"
       />
 
       <HomeContentSection
@@ -57,7 +57,7 @@
 
 <script setup lang="ts">
 import HomeContentSection from '@/components/HomeContentSection.vue'
-import { useHomeViewData } from '@/composables/useHomeViewData'
+import { useHomeViewData } from '@/composables/home/useHomeViewData'
 
 const {
   showNearbySection,

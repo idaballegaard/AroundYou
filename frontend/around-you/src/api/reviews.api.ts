@@ -1,4 +1,5 @@
-import { API_BASE_URL } from '@/constants/config'
+import { getAuthToken } from '@/api/authSession'
+import { apiRequest, clearApiCache, jsonHeaders } from '@/api/http'
 
 export type ReviewTargetType = 'city' | 'event' | 'attraction'
 
@@ -7,6 +8,9 @@ export interface ReviewItem {
   targetId: string
   targetType: ReviewTargetType
   author: string
+  // Added by the backend response layer from the author's user profile. It is
+  // optional for compatibility with older responses.
+  authorAvatar?: string
   title: string
   description: string
   rating: number
@@ -26,63 +30,35 @@ export interface CreateReviewPayload {
   image?: string
 }
 
-function getToken(): string | null {
-  return localStorage.getItem('token')
-}
-
 export async function getReviewsByTarget(targetId: string): Promise<ReviewItem[]> {
-  const res = await fetch(`${API_BASE_URL}/reviews/target/${encodeURIComponent(targetId)}`)
-  if (!res.ok) throw new Error('Kunne ikke hente reviews')
-  return res.json() as Promise<ReviewItem[]>
+  // Target ids are content document ids for cities, events, and attractions.
+  return apiRequest<ReviewItem[]>(`/reviews/target/${encodeURIComponent(targetId)}`)
 }
 
 export async function createReview(payload: CreateReviewPayload): Promise<ReviewItem> {
-  const token = getToken()
-  const res = await fetch(`${API_BASE_URL}/reviews`, {
+  return apiRequest<ReviewItem>('/reviews', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    token: getAuthToken(),
+    headers: jsonHeaders(),
     body: JSON.stringify(payload),
   })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as { message?: string }).message ?? 'Kunne ikke oprette review')
-  }
-  return res.json() as Promise<ReviewItem>
 }
 
 export async function likeReview(reviewId: string): Promise<ReviewItem> {
-  const token = getToken()
-  const res = await fetch(`${API_BASE_URL}/reviews/${encodeURIComponent(reviewId)}/like`, {
+  return apiRequest<ReviewItem>(`/reviews/${encodeURIComponent(reviewId)}/like`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    token: getAuthToken(),
+    headers: jsonHeaders(),
   })
-  if (!res.ok) throw new Error('Kunne ikke like review')
-  return res.json() as Promise<ReviewItem>
 }
 
 export async function reportReview(reviewId: string, reason: string): Promise<ReviewItem> {
-  const token = getToken()
-  const res = await fetch(`${API_BASE_URL}/reviews/${encodeURIComponent(reviewId)}/report`, {
+  return apiRequest<ReviewItem>(`/reviews/${encodeURIComponent(reviewId)}/report`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    token: getAuthToken(),
+    headers: jsonHeaders(),
     body: JSON.stringify({ reason }),
   })
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as { message?: string }).message ?? 'Kunne ikke rapportere review')
-  }
-
-  return res.json() as Promise<ReviewItem>
 }
 
 export interface UpdateReviewPayload {
@@ -92,19 +68,32 @@ export interface UpdateReviewPayload {
   image?: string
 }
 
-export async function updateReview(reviewId: string, payload: UpdateReviewPayload): Promise<ReviewItem> {
-  const token = getToken()
-  const res = await fetch(`${API_BASE_URL}/reviews/${encodeURIComponent(reviewId)}`, {
+export async function updateReview(
+  reviewId: string,
+  payload: UpdateReviewPayload,
+): Promise<ReviewItem> {
+  return apiRequest<ReviewItem>(`/reviews/${encodeURIComponent(reviewId)}`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    token: getAuthToken(),
+    headers: jsonHeaders(),
     body: JSON.stringify(payload),
   })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error((err as { message?: string }).message ?? 'Kunne ikke opdatere review')
-  }
-  return res.json() as Promise<ReviewItem>
+}
+
+type DeleteReviewResponse = {
+  message: string
+  data: ReviewItem
+}
+
+export async function deleteReview(reviewId: string): Promise<ReviewItem> {
+  const response = await apiRequest<DeleteReviewResponse>(`/reviews/${encodeURIComponent(reviewId)}`, {
+    method: 'DELETE',
+    token: getAuthToken(),
+  })
+
+  // Detail pages and cards derive rating/count data from visible reviews, so a
+  // self-delete needs to invalidate short-lived public reads.
+  clearApiCache()
+
+  return response.data
 }

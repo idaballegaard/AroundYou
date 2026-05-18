@@ -17,6 +17,8 @@ router.get("/", (req: Request, res: Response) => {
   res.status(200).send("Welcome to the AroundYou API");
 });
 
+// Order matters for overlapping paths: admin/auth routes should be mounted
+// before public resource routes that use broader parameterized paths.
 router.use(uploadRoutes);
 router.use(geocodingRoutes);
 router.use(contentSuggestionRoutes);

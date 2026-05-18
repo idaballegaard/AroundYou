@@ -1,16 +1,13 @@
 import { Request, Response } from "express";
+import { geocodeLocation, GeocodingServiceError } from "../services/geocoding.service";
 
 type NominatimReverseResponse = {
   display_name?: string;
 };
 
-type NominatimSearchResponse = {
-  lat?: string;
-  lon?: string;
-  display_name?: string;
-};
-
 function parseCoordinate(value: unknown): number | null {
+  // Query params arrive as strings. Return null instead of NaN so validation
+  // branches stay explicit.
   if (typeof value !== "string") {
     return null;
   }
@@ -28,6 +25,7 @@ function isValidLongitude(longitude: number): boolean {
 }
 
 function parseText(value: unknown): string | null {
+  // Empty query strings should behave like missing parameters.
   if (typeof value !== "string") {
     return null;
   }
@@ -49,54 +47,15 @@ export async function forwardGeocode(
   }
 
   try {
-    const query = address
-      ? new URLSearchParams({
-          format: "json",
-          street: address,
-          city,
-          limit: "1",
-        })
-      : new URLSearchParams({
-          format: "json",
-          q: city,
-          limit: "1",
-        });
-
-    const response = await fetch(`https://nominatim.openstreetmap.org/search?${query}`, {
-      headers: {
-        "User-Agent": "AroundYou/1.0",
-        Accept: "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      res.status(response.status).json({ message: "Geocoding failed" });
-      return;
-    }
-
-    const data = (await response.json()) as NominatimSearchResponse[];
-    const firstMatch = data[0];
-    const latitude = parseCoordinate(firstMatch?.lat);
-    const longitude = parseCoordinate(firstMatch?.lon);
-
-    if (
-      !firstMatch ||
-      latitude === null ||
-      longitude === null ||
-      !isValidLatitude(latitude) ||
-      !isValidLongitude(longitude)
-    ) {
-      res.status(404).json({ message: "Location could not be found" });
-      return;
-    }
-
-    res.status(200).json({
-      latitude,
-      longitude,
-      displayName: firstMatch.display_name ?? (address ? `${address}, ${city}` : city),
-    });
+    res.status(200).json(await geocodeLocation(address, city));
   } catch (err) {
     console.error("Geocoding failed:", err);
+
+    if (err instanceof GeocodingServiceError) {
+      res.status(err.statusCode).json({ message: err.message });
+      return;
+    }
+
     res.status(500).json({ message: "Geocoding failed" });
   }
 }
@@ -119,6 +78,8 @@ export async function reverseGeocode(
   }
 
   try {
+    // Reverse geocoding is only used for display text; the validated coordinate
+    // pair remains the source of truth for maps.
     const query = new URLSearchParams({
       format: "json",
       lat: String(latitude),

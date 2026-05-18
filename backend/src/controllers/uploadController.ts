@@ -19,6 +19,8 @@ const getFileExtension = (fileName: string): string => {
 };
 
 function extensionMatchesMimeType(extension: string, mimeType: string): boolean {
+  // Check both MIME type and extension. Browser-provided MIME alone is not
+  // enough to prevent renamed unsupported files.
   if (mimeType === "image/png") return extension === "png";
   if (mimeType === "image/webp") return extension === "webp";
   if (mimeType === "image/jpeg" || mimeType === "image/jpg") {
@@ -29,6 +31,8 @@ function extensionMatchesMimeType(extension: string, mimeType: string): boolean 
 }
 
 export function isAllowedUploadImageType(fileName: string, mimeType: string): boolean {
+  // Keep this in a named export so tests can cover upload type validation
+  // without going through multer.
   const extension = getFileExtension(fileName);
 
   return (
@@ -39,6 +43,8 @@ export function isAllowedUploadImageType(fileName: string, mimeType: string): bo
 }
 
 const imageUpload = multer({
+  // Memory storage is intentional: validated files are streamed into GridFS
+  // manually, and never written to the local filesystem.
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_IMAGE_SIZE_BYTES, files: 1 },
   fileFilter: (
@@ -46,9 +52,7 @@ const imageUpload = multer({
     file: Express.Multer.File,
     callback: FileFilterCallback,
   ) => {
-    if (
-      !isAllowedUploadImageType(file.originalname, file.mimetype)
-    ) {
+    if (!isAllowedUploadImageType(file.originalname, file.mimetype)) {
       callback(new Error("Kun PNG-, JPG- og WEBP-billeder er tilladt"));
       return;
     }
@@ -83,6 +87,8 @@ export function uploadSingleImage(
 }
 
 const getImagesBucket = () => {
+  // GridFS depends on the active mongoose connection; fail early if uploads are
+  // called before the database is ready.
   if (!mongoose.connection.db) {
     throw new Error("MongoDB database is not connected");
   }
@@ -91,6 +97,8 @@ const getImagesBucket = () => {
 };
 
 const saveImageToDatabase = async (file: Express.Multer.File) => {
+  // Generate a server-side filename to avoid trusting user-provided names while
+  // preserving useful metadata for debugging.
   const bucket = getImagesBucket();
   const extension = getFileExtension(file.originalname);
   const fileName = `${Date.now()}-${new ObjectId().toString()}.${extension}`;
@@ -111,6 +119,8 @@ const saveImageToDatabase = async (file: Express.Multer.File) => {
 };
 
 function getApiBaseUrl(req: Request): string {
+  // Production can force a public API base URL. Local development derives it
+  // from the incoming request host.
   const configuredApiBaseUrl = process.env.API_BASE_URL?.trim();
 
   if (configuredApiBaseUrl) {
@@ -164,6 +174,8 @@ export async function getUploadedImage(
       | { contentType?: string }
       | undefined;
 
+    // Reapply the original content type from upload metadata and prevent MIME
+    // sniffing when browsers render the streamed GridFS file.
     if (metadata?.contentType) {
       res.setHeader("Content-Type", metadata.contentType);
     }

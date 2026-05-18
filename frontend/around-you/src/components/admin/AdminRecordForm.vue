@@ -2,9 +2,9 @@
   <aside class="rounded-lg border border-slate-200 bg-white p-5">
     <div class="flex items-start justify-between gap-3">
       <div>
-        <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#de5826]">
+        <h6 class="text-[0.8rem] font-semibold uppercase tracking-[0.18em] text-[#de5826]">
           {{ config.label }}
-        </p>
+        </h6>
         <h2 class="mt-2 text-xl font-black text-[#094b7b]">
           {{ isEditing ? 'Rediger post' : 'Opret post' }}
         </h2>
@@ -25,14 +25,21 @@
       >
         {{ field.label }}
         <div v-if="field.type === 'image'" class="grid gap-2">
+          <!-- Native file input text is browser-localized, so hide it behind a Danish label. -->
           <input
-            class="rounded-md border border-slate-300 px-3 py-2 font-normal"
+            class="sr-only"
             type="file"
             accept="image/png,image/jpeg,image/jpg,image/webp"
             :required="field.required && !stringField(field.key)"
             :disabled="isFieldUploading(field.key)"
             @change="uploadSingleImage(field.key, $event)"
           />
+          <span
+            class="inline-flex w-fit cursor-pointer rounded-lg bg-[#094b7b] px-3 py-2 text-sm font-semibold text-white transition"
+            :class="{ 'cursor-not-allowed opacity-60': isFieldUploading(field.key) }"
+          >
+            Vælg billede
+          </span>
           <img
             v-if="stringField(field.key)"
             :src="resolveApiAssetUrl(stringField(field.key))"
@@ -49,14 +56,21 @@
           </button>
         </div>
         <div v-else-if="field.type === 'image-list'" class="grid gap-2">
+          <!-- Multiple uploads share the same custom-label pattern as single image fields. -->
           <input
-            class="rounded-md border border-slate-300 px-3 py-2 font-normal"
+            class="sr-only"
             type="file"
             multiple
             accept="image/png,image/jpeg,image/jpg,image/webp"
             :disabled="isFieldUploading(field.key)"
             @change="uploadImageList(field.key, $event)"
           />
+          <span
+            class="inline-flex w-fit cursor-pointer rounded-lg bg-[#094b7b] px-3 py-2 text-sm font-semibold text-white transition"
+            :class="{ 'cursor-not-allowed opacity-60': isFieldUploading(field.key) }"
+          >
+            Vælg billeder
+          </span>
           <div v-if="arrayField(field.key).length" class="grid grid-cols-2 gap-2">
             <div
               v-for="(image, index) in arrayField(field.key)"
@@ -77,6 +91,15 @@
               </button>
             </div>
           </div>
+        </div>
+        <div v-else-if="field.type === 'slug-picker'">
+          <CategorySlugPicker
+            :model-value="arrayField(field.key)"
+            :options="categoryOptions"
+            :label="field.label"
+            placeholder="Søg eller opret kategori"
+            @update:model-value="setArrayField(field.key, $event)"
+          />
         </div>
         <textarea
           v-else-if="field.type === 'textarea'"
@@ -117,9 +140,6 @@
             setTextLikeField(field.key, field.type, ($event.target as HTMLInputElement).value)
           "
         />
-        <span v-if="field.type === 'tags'" class="text-xs font-medium text-slate-500">
-          Adskil værdier med komma.
-        </span>
         <span v-if="isFieldUploading(field.key)" class="text-xs font-bold text-[#094b7b]">
           Uploader billede...
         </span>
@@ -144,6 +164,7 @@
 
 <script setup lang="ts">
 import { toRefs } from 'vue'
+import CategorySlugPicker from '@/components/CategorySlugPicker.vue'
 import { useAdminRecordForm } from '@/composables/admin/useAdminRecordForm'
 import { resolveApiAssetUrl } from '@/constants/config'
 import type { AdminCollectionConfig, AdminEditableRecord } from '@/types/admin'
@@ -163,15 +184,19 @@ defineEmits<{
 const form = defineModel<AdminEditableRecord>({ required: true })
 const { errorMessage } = toRefs(props)
 
+// The admin form is schema-driven. These accessors normalize values from the
+// dynamic record before they reach Vue inputs.
 const {
   arrayField,
   booleanField,
+  categoryOptions,
   dateField,
   displayErrorMessage,
   isFieldUploading,
   isUploading,
   numberField,
   removeImageFromList,
+  setArrayField,
   setBooleanField,
   setNumberField,
   setStringField,

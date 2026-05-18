@@ -14,6 +14,8 @@ export function getRestoreUpdate(): Record<string, unknown> {
 }
 
 export function normalizeSlug(value: string): string {
+  // Danish characters are normalized to route-safe ASCII slugs so old URLs and
+  // frontend-generated slugs resolve consistently.
   return value
     .toLowerCase()
     .replace(/æ/g, "a")

@@ -8,6 +8,7 @@ import type { NatureExperienceCard } from '@/types/nature-experience-card'
 import type { NatureExperienceSource } from '@/types/nature-experience-source'
 import type { NearbyLocationContent } from '@/types/nearby-location-content'
 import { apiGetCached } from '@/api/http'
+import { getReviewsByTarget } from '@/api/reviews.api'
 import { resolveApiAssetUrl } from '@/constants/config'
 import { distanceKm, parseGpsPosition } from '@/utils/geo'
 
@@ -22,14 +23,74 @@ function toRadians(value: number): number {
   return (value * Math.PI) / 180
 }
 
-function normalizedRating(entry: NatureExperienceSource): number {
-  return typeof entry.rating === 'number' ? entry.rating : 0
+type ExperienceReviewSummary = {
+  rating: number
+  reviews: number
+}
+
+const experienceReviewSummaryCache = new Map<string, ExperienceReviewSummary>()
+const pendingExperienceReviewSummaryCache = new Map<string, Promise<ExperienceReviewSummary>>()
+
+/**
+ * Loads live review counts for cards whose base content records do not carry
+ * enough review metadata. The in-flight cache prevents home sections from
+ * issuing duplicate review requests for the same attraction or event.
+ */
+async function getExperienceReviewSummary(
+  targetId: string,
+  fallbackRating: number,
+): Promise<ExperienceReviewSummary> {
+  const cachedSummary = experienceReviewSummaryCache.get(targetId)
+
+  if (cachedSummary) {
+    return cachedSummary
+  }
+
+  const pendingSummary = pendingExperienceReviewSummaryCache.get(targetId)
+
+  if (pendingSummary) {
+    return pendingSummary
+  }
+
+  const summaryPromise = getReviewsByTarget(targetId)
+    .then((reviews) => {
+      const summary: ExperienceReviewSummary = {
+        rating: reviews.length
+          ? reviews.reduce((accumulator, review) => accumulator + review.rating, 0) / reviews.length
+          : fallbackRating,
+        reviews: reviews.length,
+      }
+
+      experienceReviewSummaryCache.set(targetId, summary)
+
+      return summary
+    })
+    .catch(() => {
+      const fallbackSummary: ExperienceReviewSummary = {
+        rating: fallbackRating,
+        reviews: 0,
+      }
+
+      experienceReviewSummaryCache.set(targetId, fallbackSummary)
+
+      return fallbackSummary
+    })
+    .finally(() => {
+      pendingExperienceReviewSummaryCache.delete(targetId)
+    })
+
+  pendingExperienceReviewSummaryCache.set(targetId, summaryPromise)
+
+  return summaryPromise
 }
 
 function isMongoObjectId(value: string): boolean {
   return /^[a-f\d]{24}$/i.test(value)
 }
 
+/**
+ * Resolves either a current ObjectId route or an older slug/name route.
+ */
 export async function getEventByIdentifier(eventIdentifier: string): Promise<EventApiItem | null> {
   if (!eventIdentifier.trim()) {
     return null
@@ -57,6 +118,8 @@ export async function getEventByIdentifier(eventIdentifier: string): Promise<Eve
 export async function getAttractionByIdentifier(
   attractionIdentifier: string,
 ): Promise<AttractionApiItem | null> {
+  // Detail routes migrated from names/slugs to ids; support both so existing
+  // shared links and browser history keep working.
   if (!attractionIdentifier.trim()) {
     return null
   }
@@ -84,6 +147,8 @@ export async function getAttractionByIdentifier(
 }
 
 export async function getCityByName(cityName: string): Promise<CityApiItem | null> {
+  // The route parameter can be a city id or a display name depending on where
+  // the user navigated from.
   if (!cityName.trim()) {
     return null
   }
@@ -113,6 +178,8 @@ export async function getCityByName(cityName: string): Promise<CityApiItem | nul
 }
 
 function normalizeEntitySlug(value: string): string {
+  // Fold Danish characters and punctuation into stable route-like comparison
+  // keys without changing the source names shown in the UI.
   return value
     .trim()
     .toLowerCase()
@@ -129,6 +196,8 @@ export async function getNearbyLocationContent(
   coords: Coordinates,
   limit = 4,
 ): Promise<NearbyLocationContent> {
+  // Nearby content is computed client-side from cached public datasets so the
+  // home page can react immediately to browser geolocation.
   const [attractions, cities] = await Promise.all([
     fetchJson<AttractionApiItem[]>('/attractions'),
     fetchJson<CityApiItem[]>('/city'),
@@ -210,6 +279,8 @@ export async function getLargestCities(limit = 4): Promise<LargestCityCard[]> {
 }
 
 async function getExperiencesBySlug(slug: string, limit = 4): Promise<NatureExperienceCard[]> {
+  // Category sections combine attractions and events, then sort by live review
+  // quality so the cards match what users currently rate highly.
   const [attractions, events] = await Promise.all([
     fetchJson<AttractionApiItem[]>('/attractions'),
     fetchJson<EventApiItem[]>('/events'),
@@ -220,19 +291,33 @@ async function getExperiencesBySlug(slug: string, limit = 4): Promise<NatureExpe
     ...events.map((event) => ({ ...event, type: 'Event' as const })),
   ]
 
-  return entries
-    .filter((entry) =>
-      entry.slugArray.some((entrySlug: string) => entrySlug.toLowerCase() === slug.toLowerCase()),
-    )
-    .sort((first, second) => normalizedRating(second) - normalizedRating(first))
+  const filteredEntries = entries.filter((entry) =>
+    entry.slugArray.some((entrySlug: string) => entrySlug.toLowerCase() === slug.toLowerCase()),
+  )
+
+  const entriesWithReviewSummary = await Promise.all(
+    filteredEntries.map(async (entry) => ({
+      entry,
+      summary: await getExperienceReviewSummary(entry._id, entry.rating ?? 0),
+    })),
+  )
+
+  return entriesWithReviewSummary
+    .sort((first, second) => {
+      if (second.summary.rating !== first.summary.rating) {
+        return second.summary.rating - first.summary.rating
+      }
+
+      return second.summary.reviews - first.summary.reviews
+    })
     .slice(0, limit)
-    .map((entry) => ({
+    .map(({ entry, summary }) => ({
       id: entry._id,
       name: entry.name,
       description: entry.description,
-      image: resolveApiAssetUrl(entry.heroImage),
-      rating: entry.rating ?? 0,
-      reviews: 0,
+      image: entry.heroImage,
+      rating: summary.rating,
+      reviews: summary.reviews,
       tags: entry.slugArray,
       metaText: entry.type,
       href: entry.type === 'Event' ? `/event/${entry._id}` : `/attraction/${entry._id}`,

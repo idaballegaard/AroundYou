@@ -8,6 +8,8 @@ import type {
 } from '@/types/content/useCreateContent'
 
 export const useCreateContentForm = () => {
+  // Holds tab-local form state. Forms are not reset on tab switch, which lets a
+  // user compare content types without losing partially entered data.
   const selectedType = ref<ContentType>('event')
   const message = ref('')
   const messageType = ref<'success' | 'error' | 'info'>('info')
@@ -58,6 +60,8 @@ export const useCreateContentForm = () => {
 
   const fetchCategoryOptions = async () => {
     try {
+      // Category options are suggestions only; users may still create new slugs
+      // through the picker.
       const [events, attractions] = await Promise.all([fetchEvents(), fetchAttractions()])
       const unique = new Set(
         [...events, ...attractions]

@@ -1,8 +1,15 @@
-import { ref } from 'vue'
 import type { User } from '@/types/user'
-import { hasPermission, hasRole } from '@/utils/accessControl'
 import { toAuthenticatedUser } from '@/api/helpers/authMapper'
 import { USER_API_URL } from '@/constants/config'
+import {
+  authValidated,
+  clearAuthSession,
+  currentUser,
+  isAdmin,
+  setAuthSession,
+  setAuthUser,
+  token,
+} from '@/api/authSession'
 
 type AuthResponse = {
   token: string
@@ -18,40 +25,12 @@ async function getErrorMessage(response: Response, fallback: string): Promise<st
   }
 }
 
-function getStoredToken(): string | null {
-  if (typeof window === 'undefined') return null
-  const storage = window.localStorage as Storage | undefined
-  if (!storage || typeof storage.getItem !== 'function') return null
-  return storage.getItem('token')
-}
-
-const token = ref<string | null>(getStoredToken())
-const currentUser = ref<User | null>(null)
-const authValidated = ref(false)
-const isAdmin = ref(false)
-
-function syncUserStorage(user: User | null): void {
-  if (!user) {
-    localStorage.removeItem('userName')
-    localStorage.removeItem('userAvatar')
-    return
-  }
-
-  localStorage.setItem('userName', user.userName)
-
-  if (user.userAvatar) {
-    localStorage.setItem('userAvatar', user.userAvatar)
-    return
-  }
-
-  localStorage.removeItem('userAvatar')
-}
-
 export const useAuthService = () => {
   const login = async (identifier: string, password: string): Promise<AuthResponse> => {
     const response = await fetch(`${USER_API_URL}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ identifier, password }),
     })
 
@@ -61,21 +40,15 @@ export const useAuthService = () => {
 
     const data = await response.json()
     const authenticatedUser = toAuthenticatedUser((data as { user?: unknown }).user)
+    const authToken = (data as { token?: unknown }).token
 
-    if (!(data as { token?: unknown }).token || !authenticatedUser) {
+    if (typeof authToken !== 'string' || !authToken || !authenticatedUser) {
       throw new Error('Invalid API response')
     }
 
-    token.value = (data as { token: string }).token
-    currentUser.value = authenticatedUser
-    authValidated.value = true
-    isAdmin.value =
-      hasRole(authenticatedUser.role, 'admin') ||
-      hasPermission(authenticatedUser.permissions, 'admin:access')
-    localStorage.setItem('token', token.value)
-    syncUserStorage(authenticatedUser)
+    setAuthSession(authToken, authenticatedUser)
 
-    return { token: token.value, user: authenticatedUser }
+    return { token: authToken, user: authenticatedUser }
   }
 
   const register = async (
@@ -97,27 +70,23 @@ export const useAuthService = () => {
   }
 
   const logout = () => {
-    token.value = null
-    currentUser.value = null
-    authValidated.value = false
-    isAdmin.value = false
-    localStorage.removeItem('token')
-    syncUserStorage(null)
+    clearAuthSession()
+    void Promise.resolve(
+      fetch(`${USER_API_URL}/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      }),
+    ).catch(() => {
+      // Local auth state is already cleared; failing to clear the cookie should not block logout UI.
+    })
   }
 
   const checkSession = async (): Promise<boolean> => {
-    if (!token.value) {
-      currentUser.value = null
-      authValidated.value = false
-      isAdmin.value = false
-      syncUserStorage(null)
-      return false
-    }
-
     const response = await fetch(`${USER_API_URL}/me`, {
       method: 'GET',
+      credentials: 'include',
       headers: {
-        Authorization: `Bearer ${token.value}`,
+        ...(token.value ? { Authorization: `Bearer ${token.value}` } : {}),
       },
     })
 
@@ -126,16 +95,17 @@ export const useAuthService = () => {
       return false
     }
 
-    const user = toAuthenticatedUser(await response.json())
+    const data = await response.json()
+    const user = toAuthenticatedUser(data)
     if (!user) {
       logout()
       return false
     }
 
-    currentUser.value = user
+    const refreshedToken = (data as { token?: unknown }).token
+    token.value = typeof refreshedToken === 'string' && refreshedToken ? refreshedToken : token.value
     authValidated.value = true
-    isAdmin.value = hasRole(user.role, 'admin') || hasPermission(user.permissions, 'admin:access')
-    syncUserStorage(currentUser.value)
+    setAuthUser(user)
     return true
   }
 
