@@ -19,10 +19,6 @@ async function fetchJson<T>(path: string): Promise<T> {
   return apiGetCached<T>(path)
 }
 
-function toRadians(value: number): number {
-  return (value * Math.PI) / 180
-}
-
 type ExperienceReviewSummary = {
   rating: number
   reviews: number

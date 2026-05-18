@@ -16,6 +16,7 @@ type AuthResponse = {
   user: User
 }
 
+// Extracts API error messages while keeping a fallback for invalid error responses.
 async function getErrorMessage(response: Response, fallback: string): Promise<string> {
   try {
     const error = (await response.json()) as { message?: string; error?: string }
@@ -25,7 +26,11 @@ async function getErrorMessage(response: Response, fallback: string): Promise<st
   }
 }
 
+/**
+ * Provides authentication actions and shared auth state.
+ */
 export const useAuthService = () => {
+  // Authenticates the user and stores the returned session data.
   const login = async (identifier: string, password: string): Promise<AuthResponse> => {
     const response = await fetch(`${USER_API_URL}/login`, {
       method: 'POST',
@@ -51,6 +56,7 @@ export const useAuthService = () => {
     return { token: authToken, user: authenticatedUser }
   }
 
+  // Creates a new user account.
   const register = async (
     firstName: string,
     lastName: string,
@@ -69,6 +75,7 @@ export const useAuthService = () => {
     }
   }
 
+  // Clears local auth state immediately and then attempts server-side logout.
   const logout = () => {
     clearAuthSession()
     void Promise.resolve(
@@ -81,6 +88,7 @@ export const useAuthService = () => {
     })
   }
 
+  // Validates the current session and refreshes local user/token state.
   const checkSession = async (): Promise<boolean> => {
     const response = await fetch(`${USER_API_URL}/me`, {
       method: 'GET',
@@ -97,15 +105,19 @@ export const useAuthService = () => {
 
     const data = await response.json()
     const user = toAuthenticatedUser(data)
+
     if (!user) {
       logout()
       return false
     }
 
     const refreshedToken = (data as { token?: unknown }).token
-    token.value = typeof refreshedToken === 'string' && refreshedToken ? refreshedToken : token.value
+    token.value =
+      typeof refreshedToken === 'string' && refreshedToken ? refreshedToken : token.value
+
     authValidated.value = true
     setAuthUser(user)
+
     return true
   }
 
