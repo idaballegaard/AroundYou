@@ -1,16 +1,18 @@
 <template>
-  <section class="grid gap-6 xl:grid-cols-[360px_1fr]">
-    <AdminRecordForm
-      v-model="form"
-      :config="config"
-      :error-message="errorMessage"
-      :is-editing="editingId !== null"
-      :is-saving="isSaving"
-      @reset="resetForm"
-      @save="saveRecord"
-    />
+  <section class="grid min-w-0 gap-4 sm:gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
+    <div ref="formPanel" class="min-w-0">
+      <AdminRecordForm
+        v-model="form"
+        :config="config"
+        :error-message="errorMessage"
+        :is-editing="editingId !== null"
+        :is-saving="isSaving"
+        @reset="resetForm"
+        @save="saveRecord"
+      />
+    </div>
 
-    <div class="grid gap-6">
+    <div class="grid min-w-0 gap-4 sm:gap-6">
       <AdminSuggestionQueue
         :suggestions="suggestions"
         :is-loading="isLoading"
@@ -24,7 +26,7 @@
         :active-records="activeRecords"
         :hidden-records="hiddenRecords"
         :is-hidden-loading="isHiddenLoading"
-        @edit="editRecord"
+        @edit="handleEditRecord"
         @hide="removeRecord"
         @restore="restoreRecord"
         @load-hidden="loadHiddenRecords"
@@ -34,12 +36,12 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { nextTick, onMounted, ref } from 'vue'
 import AdminRecordForm from '@/components/admin/AdminRecordForm.vue'
 import AdminRecordList from '@/components/admin/AdminRecordList.vue'
 import AdminSuggestionQueue from '@/components/admin/AdminSuggestionQueue.vue'
 import { useAdminCollection } from '@/composables/admin/useAdminCollection'
-import type { AdminCollectionConfig } from '@/types/admin'
+import type { AdminCollectionConfig, AdminRecord } from '@/types/admin'
 
 const props = defineProps<{
   config: AdminCollectionConfig
@@ -66,6 +68,14 @@ const {
   approveSuggestion,
   rejectSuggestion,
 } = useAdminCollection(props.config)
+
+const formPanel = ref<HTMLElement | null>(null)
+
+async function handleEditRecord(record: AdminRecord): Promise<void> {
+  editRecord(record)
+  await nextTick()
+  formPanel.value?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+}
 
 onMounted(() => {
   void load()

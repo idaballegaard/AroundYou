@@ -1,11 +1,15 @@
 <template>
-  <main class="min-h-screen bg-[#eef4f7] px-4 py-8">
-    <section class="mx-auto grid max-w-7xl gap-6">
-      <header class="rounded-lg border border-slate-200 bg-white p-6">
-        <h6 class="text-[0.8rem] font-semibold uppercase tracking-[0.18em] text-[#de5826]">Adminpanel</h6>
+  <main class="min-h-screen bg-[#eef4f7] px-3 py-4 sm:px-4 sm:py-8">
+    <section class="mx-auto grid max-w-7xl gap-4 sm:gap-6">
+      <header class="rounded-lg border border-slate-200 bg-white p-4 sm:p-6">
+        <h6 class="text-[0.8rem] font-semibold uppercase tracking-[0.18em] text-[#de5826]">
+          Adminpanel
+        </h6>
         <div class="mt-3 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 class="text-3xl font-black tracking-tight text-[#094b7b]">Indholdskontrol</h1>
+            <h1 class="text-2xl font-black tracking-tight text-[#094b7b] sm:text-3xl">
+              Indholdskontrol
+            </h1>
             <p class="mt-2 max-w-3xl text-sm text-slate-600">
               Adminpanelet giver adgang til godkendelse, redigering og moderation af sidens indhold.
             </p>
@@ -13,11 +17,13 @@
         </div>
       </header>
 
-      <nav class="flex flex-wrap gap-2 rounded-lg border border-slate-200 bg-white p-2">
+      <nav
+        class="flex gap-2 overflow-x-auto rounded-lg border border-slate-200 bg-white p-1.5 sm:flex-wrap sm:p-2"
+      >
         <button
           v-for="tab in tabs"
           :key="tab.key"
-          class="rounded-md px-4 py-2 text-sm font-black transition"
+          class="shrink-0 rounded-md px-3 py-2 text-sm font-black transition sm:px-4"
           :class="
             activeTab === tab.key ? 'bg-[#094b7b] text-white' : 'text-slate-600 hover:bg-slate-100'
           "

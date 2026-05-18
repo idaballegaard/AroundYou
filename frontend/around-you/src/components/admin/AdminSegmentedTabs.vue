@@ -1,9 +1,9 @@
 <template>
-  <div class="flex rounded-md border border-slate-200 bg-slate-50 p-1">
+  <div class="flex max-w-full overflow-x-auto rounded-md border border-slate-200 bg-slate-50 p-1">
     <button
       v-for="tab in tabs"
       :key="tab.key"
-      class="rounded px-3 py-1.5 text-sm font-black"
+      class="shrink-0 rounded px-2.5 py-1.5 text-sm font-black sm:px-3"
       :class="model === tab.key ? 'bg-white text-[#094b7b] shadow-sm' : 'text-slate-500'"
       @click="model = tab.key"
     >
