@@ -18,6 +18,22 @@ import {
   type SelectedSearchMapMarker,
 } from './searchView.helpers'
 
+/**
+ * SearchView state flow:
+ *
+ * Filters
+ *   ↓
+ * useSearchResults()
+ *   ↓
+ * visible result items
+ *   ↓
+ * pagination
+ *   ↓
+ * map markers + cards
+ *
+ * Map interactions can feed back into filters,
+ * which re-triggers the search pipeline.
+ */
 export const useSearchView = () => {
   // Coordinates search result filtering, pagination, and map selection for the
   // SearchView without putting routing/map details in the component.
@@ -114,7 +130,9 @@ export const useSearchView = () => {
     filters,
     () => {
       currentPage.value = 1
-
+      // If the user manually changes the location filter after selecting a city
+      // from the map, clear the map-derived selection state so the UI does not
+      // incorrectly imply the map selection is still active.
       if (filters.value.location !== citySelectedFromMap.value) {
         citySelectedFromMap.value = ''
       }

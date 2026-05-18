@@ -17,9 +17,13 @@ const emptyNearbyContent: NearbyLocationContent = {
   attractions: [],
 }
 
+/**
+ * Collects and manages all async data used by the HomeView.
+ */
 export const useHomeViewData = () => {
   const geolocationStore = useGeolocationStore()
 
+  // Loads nearby attractions based on the user's current coordinates.
   const nearbySection = useAsyncData<NearbyLocationContent>(
     async () => {
       if (!geolocationStore.coords) {
@@ -34,26 +38,31 @@ export const useHomeViewData = () => {
     },
   )
 
+  // Loads featured city cards for the home page.
   const citiesSection = useAsyncData<ExperienceCard[]>(() => getLargestCities(4), {
     defaultValue: [],
     getErrorMessage: () => 'Vi kunne ikke hente de største byer',
   })
 
+  // Loads featured nature experiences for the home page.
   const natureSection = useAsyncData<ExperienceCard[]>(() => getNatureExperiences(4), {
     defaultValue: [],
     getErrorMessage: () => 'Vi kunne ikke hente naturoplevelser',
   })
 
+  // Loads featured family experiences for the home page.
   const familySection = useAsyncData<ExperienceCard[]>(() => getFamilyExperiences(4), {
     defaultValue: [],
     getErrorMessage: () => 'Vi kunne ikke hente familieoplevelser.',
   })
 
+  // Maps nearby section state into view-friendly computed values.
   const userLocation = computed(() => nearbySection.data.value.locationName)
   const userLocationDescription = computed(() => nearbySection.data.value.locationDescription)
   const nearbyCards = computed(() => nearbySection.data.value.attractions)
   const showNearbySection = computed(() => Boolean(geolocationStore.coords))
 
+  // Reacts to coordinate changes and refreshes nearby attractions.
   watch(
     () => geolocationStore.coords,
     (coords) => {
@@ -74,6 +83,7 @@ export const useHomeViewData = () => {
     { immediate: true },
   )
 
+  // Applies a fallback state when geolocation access fails.
   watch(
     () => geolocationStore.error,
     (error) => {
@@ -86,6 +96,7 @@ export const useHomeViewData = () => {
     },
   )
 
+  // Loads static homepage sections when the view mounts.
   onMounted(() => {
     void citiesSection.execute().catch((error) => {
       console.error('Fejl ved hentning af byer:', error)

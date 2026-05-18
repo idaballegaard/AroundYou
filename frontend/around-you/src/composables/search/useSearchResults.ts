@@ -12,9 +12,19 @@ import {
 import { useGeolocationStore } from '@/stores/geolocation'
 import type { Coordinates, SearchFilters, SearchResult } from '@/types/search'
 
+/**
+ * Loads all searchable content and decides which results should be shown.
+ *
+ * Result strategy:
+ * - If the user allows geolocation and has no active filters, show nearby experiences.
+ * - If geolocation is unavailable and there are no active filters, show the largest cities.
+ * - If filters are active, filter the full result set.
+ */
 export const useSearchResults = (filters: Ref<SearchFilters>) => {
   const geolocationStore = useGeolocationStore()
   const results = ref<SearchResult[]>([])
+
+  // Fallback results shown when geolocation is unavailable and no filters are active.
   const largestCityResults = ref<SearchResult[]>([])
   const cityCoordinates = ref<Record<string, Coordinates>>({})
   const isLoading = ref(true)
@@ -81,7 +91,8 @@ export const useSearchResults = (filters: Ref<SearchFilters>) => {
       lng: geolocationStore.coords.longitude,
     }
   })
-
+  // Nearby suggestions exclude cities because the "near me" view should surface
+  // experiences such as events and attractions, not city overview cards.
   const locationSortedExperienceResults = computed(() => {
     const coords = userCoordinates.value
 
@@ -101,6 +112,7 @@ export const useSearchResults = (filters: Ref<SearchFilters>) => {
 
   const nearestExperienceResults = computed(() => locationSortedExperienceResults.value.slice(0, 6))
 
+  // Decides the base result set before text/type/date/category filters are applied.
   const visibleResults = computed(() => {
     if (userCoordinates.value) {
       if (filters.value.location.trim().length === 0 && hasActiveFilters.value) {

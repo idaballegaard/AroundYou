@@ -12,15 +12,20 @@ import {
 } from './detailView.helpers'
 import { useReverseGeocodedAddress } from './useReverseGeocodedAddress'
 
+/**
+ * Collects and manages all state used by the single attraction detail view.
+ */
 export function useSingleAttractionView() {
   const route = useRoute()
   const reviewRating = ref<number | null>(null)
 
+  // Resolves the attraction identifier from the current route params.
   const attractionParam = computed(() => {
     const routeAttraction = route.params.attractionId
     return typeof routeAttraction === 'string' ? routeAttraction.trim() : ''
   })
 
+  // Loads the selected attraction from the API.
   const attractionSection = useAsyncData<AttractionApiItem | null>(
     () => getAttractionByIdentifier(attractionParam.value),
     {
@@ -29,6 +34,7 @@ export function useSingleAttractionView() {
     },
   )
 
+  // Refetches attraction data when the route identifier changes.
   watch(
     attractionParam,
     () => {
@@ -39,14 +45,18 @@ export function useSingleAttractionView() {
     { immediate: true },
   )
 
+  // Maps async state into detail-view friendly values.
   const attraction = computed(() => attractionSection.data.value)
   const attractionLoading = computed(() => attractionSection.loading.value)
   const attractionError = computed(() => attractionSection.error.value)
   const displayAttractionName = computed(() => attraction.value?.name ?? '')
   const heroImage = computed(() => attraction.value?.heroImage ?? DEFAULT_ATTRACTION_HERO_IMAGE)
   const gpsPosition = computed(() => attraction.value?.gpsPosition)
+
+  // Converts the attraction GPS position into a readable address.
   const { address: attractionAddress } = useReverseGeocodedAddress(gpsPosition)
 
+  // Builds the fact list shown in the attraction detail sidebar.
   const attractionFacts = computed<DetailFact[]>(() => {
     if (!attraction.value) return []
 
@@ -67,6 +77,7 @@ export function useSingleAttractionView() {
     ].filter((fact): fact is DetailFact => fact !== null)
   })
 
+  // Stores the latest average review rating emitted by the review section.
   const handleAverageRating = (rating: number | null) => {
     reviewRating.value = rating
   }

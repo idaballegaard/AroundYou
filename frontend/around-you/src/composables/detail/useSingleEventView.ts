@@ -13,15 +13,20 @@ import {
 } from './detailView.helpers'
 import { useReverseGeocodedAddress } from './useReverseGeocodedAddress'
 
+/**
+ * Collects and manages all state used by the single event detail view.
+ */
 export function useSingleEventView() {
   const route = useRoute()
   const reviewRating = ref<number | null>(null)
 
+  // Resolves the event identifier from the available route params.
   const eventParam = computed(() => {
     const routeEvent = route.params.eventId ?? route.params.eventName ?? route.params.id
     return typeof routeEvent === 'string' ? routeEvent.trim() : ''
   })
 
+  // Loads the selected event from the API.
   const eventSection = useAsyncData<EventApiItem | null>(
     () => getEventByIdentifier(eventParam.value),
     {
@@ -30,6 +35,7 @@ export function useSingleEventView() {
     },
   )
 
+  // Refetches event data when the route identifier changes.
   watch(
     eventParam,
     () => {
@@ -40,14 +46,18 @@ export function useSingleEventView() {
     { immediate: true },
   )
 
+  // Maps async state into detail-view friendly values.
   const eventItem = computed(() => eventSection.data.value)
   const eventLoading = computed(() => eventSection.loading.value)
   const eventError = computed(() => eventSection.error.value)
   const displayEventName = computed(() => eventItem.value?.name ?? '')
   const heroImage = computed(() => eventItem.value?.heroImage ?? DEFAULT_EVENT_HERO_IMAGE)
   const gpsPosition = computed(() => eventItem.value?.gpsPosition)
+
+  // Converts the event GPS position into a readable address.
   const { address: eventAddress } = useReverseGeocodedAddress(gpsPosition)
 
+  // Builds the fact list shown in the event detail sidebar.
   const eventFacts = computed<DetailFact[]>(() => {
     if (!eventItem.value) return []
 
@@ -71,6 +81,7 @@ export function useSingleEventView() {
     ].filter((fact): fact is DetailFact => fact !== null)
   })
 
+  // Stores the latest average review rating emitted by the review section.
   const handleAverageRating = (rating: number | null) => {
     reviewRating.value = rating
   }

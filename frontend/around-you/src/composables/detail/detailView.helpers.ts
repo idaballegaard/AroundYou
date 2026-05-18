@@ -1,8 +1,10 @@
 import { parseGpsPosition } from '@/utils/geo'
 
+// Fallback image used when an attraction has no hero image.
 export const DEFAULT_ATTRACTION_HERO_IMAGE =
   'https://images.unsplash.com/photo-1524230572899-a752b3835840?auto=format&fit=crop&w=2200&q=80'
 
+// Fallback image used when an event has no hero image.
 export const DEFAULT_EVENT_HERO_IMAGE =
   'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=2200&q=80'
 
@@ -16,6 +18,7 @@ export type ReverseGeocodeResponse = {
   display_name?: string
 }
 
+// Validates whether latitude and longitude are within valid GPS ranges.
 function isValidCoordinates(latitude: number, longitude: number): boolean {
   return (
     Number.isFinite(latitude) &&
@@ -25,6 +28,7 @@ function isValidCoordinates(latitude: number, longitude: number): boolean {
   )
 }
 
+// Attempts to parse GPS coordinates from a stored position string.
 export function parseReverseGeocodePosition(
   gpsPosition: string | null | undefined,
 ): { latitude: number; longitude: number } | null {
@@ -34,6 +38,7 @@ export function parseReverseGeocodePosition(
   const commaLatitude = Number.parseFloat(latRaw ?? '')
   const commaLongitude = Number.parseFloat(lngRaw ?? '')
 
+  // Supports simple comma-separated coordinate formats.
   if (isValidCoordinates(commaLatitude, commaLongitude)) {
     return {
       latitude: commaLatitude,
@@ -41,9 +46,11 @@ export function parseReverseGeocodePosition(
     }
   }
 
+  // Falls back to the shared GPS parsing utility.
   return parseGpsPosition(gpsPosition)
 }
 
+// Formats ISO date strings into Danish-readable dates.
 export function formatDate(dateValue: string): string {
   const parsed = new Date(dateValue)
   if (Number.isNaN(parsed.getTime())) return 'Ikke angivet'
@@ -55,15 +62,18 @@ export function formatDate(dateValue: string): string {
   })
 }
 
+// Formats opening hours into a display-friendly string.
 export function formatOpeningHours(hours: string[] | null | undefined): string {
   if (!hours || hours.length === 0) return 'Ikke angivet'
   return hours.join(', ')
 }
 
+// Formats population values using Danish number formatting.
 export function formatPopulation(population: number): string {
   return `${population.toLocaleString('da-DK')} indbyggere`
 }
 
+// Formats attraction or event prices into readable Danish currency text.
 export function formatPrice(price: number): string {
   return price === 0
     ? 'Gratis'
@@ -73,6 +83,7 @@ export function formatPrice(price: number): string {
       })} kr.`
 }
 
+// Resolves a readable address from GPS coordinates using reverse geocoding.
 export async function getReverseGeocodedAddress(
   gpsPosition: string | null | undefined,
   fetcher: typeof fetch = fetch,
