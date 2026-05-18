@@ -1,16 +1,70 @@
-# AroundYou Backend
+# AroundYou Backend 🛠️
 
-Express + TypeScript API for AroundYou. The API is mounted below `/api` and uses MongoDB through Mongoose.
+Express + TypeScript API for AroundYou. The backend powers authentication, content collections, reviews, admin moderation, image uploads, notifications, geocoding, contact tickets, and content suggestions.
 
-## Local Development
+The API is mounted under:
+
+```text
+/api
+```
+
+Swagger UI is available at:
+
+```text
+/api/docs
+```
+
+## 📚 Table Of Contents
+
+- [Tech Stack](#-tech-stack)
+- [Getting Started](#-getting-started)
+- [Environment Variables](#-environment-variables)
+- [Scripts](#-scripts)
+- [Project Structure](#-project-structure)
+- [Request Lifecycle](#-request-lifecycle)
+- [How We Write Backend Code](#-how-we-write-backend-code)
+- [Auth And Permissions](#-auth-and-permissions)
+- [Moderation And Safety](#-moderation-and-safety)
+- [Testing](#-testing)
+- [Branches And PRs](#-branches-and-prs)
+- [Operational Notes](#-operational-notes)
+
+## 🧰 Tech Stack
+
+- **Node.js**
+- **Express 5**
+- **TypeScript**
+- **MongoDB + Mongoose**
+- **Joi** for request validation
+- **JWT + HttpOnly cookies** for auth/session recovery
+- **Multer + GridFS** for image uploads
+- **Swagger** for API documentation
+- **Playwright API tests**
+
+## 🚀 Getting Started
 
 Install dependencies from this folder:
 
 ```sh
+cd backend
 npm install
 ```
 
-Create `.env` from `.env.example` and fill in the required values:
+Start the API in watch mode:
+
+```sh
+npm run start-dev
+```
+
+The default local API is:
+
+```text
+http://localhost:4000/api
+```
+
+## 🔐 Environment Variables
+
+Create `.env` from `.env.example`:
 
 ```sh
 PORT=4000
@@ -23,7 +77,7 @@ ADMIN_FIRST_NAME=<default admin first name>
 ADMIN_LAST_NAME=<default admin last name>
 ```
 
-Optional development-only URL settings live in `.env.development`:
+Optional local URL settings can live in `.env.development`:
 
 ```sh
 API_BASE_URL=http://localhost:4000/api
@@ -31,50 +85,309 @@ FRONTEND_ORIGIN=http://localhost:5173
 CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ```
 
-Run the API in watch mode:
+Notes:
+
+- Do not commit real secrets.
+- `TOKEN_SECRET` must be stable across restarts or existing sessions become invalid.
+- `API_BASE_URL` controls generated public asset/API URLs.
+- `CORS_ORIGINS` should include every frontend origin that can call the API.
+
+## 📜 Scripts
 
 ```sh
-npm run start-dev
+npm run start-dev  # Start nodemon + ts-node in development
+npm run build      # Clean dist/ and compile TypeScript
+npm run start      # Run compiled dist/index.js
+npm test           # Run Playwright API tests
+npm run test:e2e   # Same as npm test
 ```
 
-Run type-checking:
+Use **npm** for this project. The repository has `package-lock.json`; do not use pnpm/yarn lockfiles.
+
+## 🗂️ Project Structure
+
+```text
+src/
+  app.ts                 Express app setup, CORS, routes, Swagger, bootstrap
+  index.ts               Server entrypoint
+  constants/             Shared enums and fixed values
+  controllers/           HTTP adapters and response shaping
+  docs/                  Swagger route annotations
+  interfaces/            Mongoose document interfaces
+  middleware/            Auth, permissions, admin checks, rate limits
+  models/                Mongoose schemas and models
+  repository/            Database connection
+  routes/                Route registration and middleware ordering
+  services/              Business logic and side effects
+  types/                 Express/JWT/shared TypeScript types
+  utils/                 Reusable helpers and sanitizers
+  validators/            Joi request validators
+
+e2e/
+  *.spec.ts              Playwright API and helper tests
+```
+
+## 🔁 Request Lifecycle
+
+Most requests follow this path:
+
+```text
+app.ts
+  -> routes/routes.ts
+  -> feature route file
+  -> middleware
+  -> controller
+  -> service/helper/model
+  -> JSON response
+```
+
+Middleware order matters:
+
+```text
+verifyToken -> requireAdmin/requirePermission -> rateLimiter -> controller
+```
+
+For public routes, controllers still apply visibility filters so hidden content does not leak.
+
+## ✍️ How We Write Backend Code
+
+### Routes 🧭
+
+- Routes should only define URL paths and middleware order.
+- Do not put business logic in route files.
+- Mount new feature routes through `routes/routes.ts`.
+
+### Controllers 🎛️
+
+- Controllers handle HTTP concerns:
+  - request params/query/body
+  - status codes
+  - response shape
+  - request-level validation errors
+- Keep controllers thin.
+- Delegate reusable work to services or utils.
+
+### Services 🧠
+
+- Services contain domain work and side effects.
+- Examples:
+  - auth user lookup and password checks
+  - contact ticket transitions
+  - notification creation
+  - review author avatar enrichment
+- Services should be easier to test than controllers.
+
+### Validators 🧪
+
+- Use Joi for request payload validation.
+- Validators should strip unknown fields when possible.
+- Convert Joi failures into normal `ValidationError` objects when controllers branch on `error.name`.
+
+### Models 🗄️
+
+- Mongoose schemas define persistence rules.
+- Backend validators still matter because they give cleaner API errors before database writes.
+- Keep public response shaping outside models unless the behavior is persistence-specific.
+
+### Comments 💬
+
+Add comments where behavior is:
+
+- security-sensitive
+- moderation-related
+- surprising from the function name
+- dependent on frontend/backend contract
+- intentionally different from the obvious implementation
+
+Avoid comments that repeat the next line of code.
+
+## 🔐 Auth And Permissions
+
+Login returns:
+
+- a JWT in the JSON response
+- an HttpOnly `aroundyou_auth` cookie
+
+The frontend keeps the token in memory. The cookie lets `/user/me` recover a session after a browser refresh.
+
+Protected endpoints accept either:
+
+```text
+Authorization: Bearer <token>
+```
+
+or the HttpOnly cookie.
+
+### Restricted Users 🚫
+
+Deleting an account restricts the user instead of removing historical content. Restricted users cannot authenticate. Login returns a Danish error message explaining that the account is restricted.
+
+### Permissions 🧩
+
+Permissions are normalized in `utils/accessControl.ts`.
+
+- Users get baseline user permissions.
+- Admins get all permissions.
+- Unknown roles are downgraded to `user`.
+- Unknown permission strings are ignored.
+
+## 🛡️ Moderation And Safety
+
+The backend includes first-pass moderation for publishable text:
+
+- reviews
+- content suggestions/direct content payloads
+
+The moderation helper lives in:
+
+```text
+src/utils/textModeration.ts
+```
+
+It normalizes text before matching:
+
+- lowercases
+- strips diacritics
+- maps common leetspeak characters
+- tolerates separators between letters
+
+Reports and contact tickets are intentionally not blocked by the same text guard, because users may need to describe abusive language when reporting it.
+
+## 👁️ Visibility And Soft Delete
+
+Most public reads hide records where:
+
+```ts
+isHidden === true
+```
+
+Admin reads default to active records but can request:
+
+```text
+?visibility=hidden
+?visibility=all
+```
+
+Shared visibility helpers live in:
+
+```text
+src/controllers/controllerUtils.ts
+src/utils/resourceUtils.ts
+```
+
+## 🖼️ Uploads
+
+Image uploads use:
+
+- Multer memory storage
+- MIME + extension validation
+- MongoDB GridFS
+- generated server-side filenames
+
+Allowed image formats:
+
+```text
+PNG, JPG/JPEG, WEBP
+```
+
+Uploaded images are served from:
+
+```text
+/api/images/:id
+```
+
+## 📍 Geocoding
+
+Geocoding uses OpenStreetMap Nominatim:
+
+- forward geocoding for address/city or city-only lookup
+- reverse geocoding for display names
+
+Coordinate validation happens before external requests.
+
+## ✅ Testing
+
+Compile TypeScript:
 
 ```sh
-npx tsc --noEmit
+npm run build
 ```
 
-The Playwright API tests start the backend through `playwright.config.ts`, so they require a reachable MongoDB connection:
+Run API tests:
 
 ```sh
 npm test
 ```
 
-## Folder Responsibilities
+Run a specific Playwright test:
 
-- `src/routes`: URL wiring and middleware ordering only.
-- `src/controllers`: HTTP adapters. Controllers validate request-level concerns, call services, and shape HTTP responses.
-- `src/services`: business operations and side effects that should not live in controllers.
-- `src/validators`: Joi request payload schemas.
-- `src/models`: Mongoose schemas and models.
-- `src/interfaces` and `src/types`: shared TypeScript shapes.
-- `src/middleware`: Express middleware for auth, permissions, rate limits, and admin checks.
-- `src/docs`: Swagger route annotations. Keep generated/API documentation here rather than in route files.
-- `src/utils`: small shared helpers that are not tied to a single feature.
+```sh
+npx playwright test e2e/upload-controller.spec.ts
+```
 
-## Auth Model
+Notes:
 
-Login returns a JWT in the response body and also sets an HttpOnly `aroundyou_auth` cookie. The frontend keeps the token in memory, while the cookie lets `/user/me` restore a session after a browser refresh.
+- API tests use `playwright.config.ts`.
+- The config can start the backend for tests.
+- Tests require a reachable MongoDB connection for endpoint tests.
+- Helper-only tests are preferred when no database is needed.
 
-Protected endpoints accept either:
+### What To Test 🧪
 
-- `Authorization: Bearer <token>`
-- the HttpOnly `aroundyou_auth` cookie
+- Validators and sanitizers
+- Access-control helpers
+- Upload validation
+- Soft-delete visibility behavior
+- Auth/session behavior
+- Moderation helpers
+- Review/report workflows when changed
 
-The cookie and JWT both expire after seven days. Logout clears the cookie through `POST /api/user/logout`.
+## 🌿 Branches And PRs
 
-In production the auth cookie uses `SameSite=None` and `Secure`, so the backend must be served over HTTPS and CORS must allow the deployed frontend origin.
+Recommended branch naming:
 
-## Swagger
+```text
+feature/<short-description>
+fix/<short-description>
+chore/<short-description>
+docs/<short-description>
+refactor/<short-description>
+```
+
+Examples:
+
+```text
+feature/review-author-avatar
+fix/restricted-user-login
+docs/backend-readme
+```
+
+### PR Checklist ✅
+
+Before opening a PR:
+
+- Pull the latest base branch.
+- Keep the PR focused.
+- Add or update tests for backend behavior changes.
+- Run `npm run build`.
+- Run relevant Playwright tests when possible.
+- Document any tests you could not run.
+- Do not commit `.env`, `dist/`, `playwright-report/`, or `test-results/`.
+- Avoid mixing formatting-only changes with feature changes.
+
+### Commit Style 📝
+
+Use clear imperative commit messages:
+
+```text
+Block restricted users from login
+Add review text moderation
+Document backend architecture
+```
+
+## 🚢 Operational Notes
+
+### Swagger 📖
 
 Swagger UI is served at:
 
@@ -82,50 +395,34 @@ Swagger UI is served at:
 /api/docs
 ```
 
-The OpenAPI base URL comes from `API_BASE_URL`, falling back to `http://localhost:4000/api`.
+The OpenAPI base URL uses `API_BASE_URL`, falling back to:
 
-## Refactor Guidance
+```text
+http://localhost:4000/api
+```
 
-When adding backend features, prefer this flow:
+### Default Admin User 👑
 
-1. Add or update request validation in `src/validators`.
-2. Put domain work in `src/services`.
-3. Keep controllers thin and HTTP-focused.
-4. Wire routes in `src/routes`.
-5. Add Swagger annotations in `src/docs` when the endpoint is public API surface.
+On startup, the backend can create or repair a default admin user from `ADMIN_*` environment variables. This is idempotent and should be safe across restarts.
 
-Avoid adding comments for straightforward code. Add comments only where behavior is security-sensitive, has side effects, or is surprising from the function name.
+### Rate Limiting ⏱️
 
-## Request Lifecycle
+Rate limiting is currently in-memory per Node process. This is fine for local development and simple deployments. If the backend is horizontally scaled, replace it or wrap it with a shared store such as Redis.
 
-Most requests follow this path:
+### Production Cookies 🍪
 
-1. `src/app.ts` configures CORS, JSON parsing, routes, Swagger, database connection, and default admin bootstrap.
-2. `src/routes/routes.ts` mounts all feature route files below `/api`.
-3. Feature routes apply middleware in the order needed for the endpoint, typically auth first, then role/permission/rate-limit checks, then the controller.
-4. Controllers validate HTTP input and delegate business work to services.
-5. Services call Mongoose models and perform side effects such as notification creation.
+In production, auth cookies use:
 
-## Visibility And Soft Delete
+```text
+SameSite=None
+Secure=true
+```
 
-Most public resource reads hide records where `isHidden === true`. Admin reads still default to visible records, but admin endpoints can opt into hidden or all records with `?visibility=hidden` or `?visibility=all`.
+That means production must run over HTTPS and CORS must allow the deployed frontend origin.
 
-The shared visibility behavior lives in `controllers/controllerUtils.ts`. Soft-delete metadata is created by `utils/resourceUtils.ts`.
+### Error Handling ⚠️
 
-## Content Payloads
-
-City, event, and attraction payloads are sanitized before writes. The sanitizer strips unknown fields, applies defaults, and validates backend schema requirements that must stay aligned with frontend forms.
-
-Shared content payload validation lives in `utils/contentPayload.ts`.
-
-## Rate Limiting
-
-Rate limiting is currently in-memory per Node process. It is useful for local development and simple deployments, but it is not shared across multiple backend instances. If the backend is scaled horizontally, replace or wrap it with a shared store such as Redis.
-
-## Default Admin User
-
-On startup, the backend can create or repair a default admin user from `ADMIN_*` environment variables. This is intentionally idempotent: existing admin records are updated only when role or permissions are incomplete.
-
-## Error Handling
-
-Controllers currently send their own error responses. Validation errors should become `400`, auth/domain service errors should carry explicit status codes, and unexpected errors should become `500` with a generic response. Avoid leaking internal error details to clients.
+- Validation errors should return `400`.
+- Auth/domain errors should use explicit status codes through `AuthServiceError` or controller checks.
+- Unexpected errors should return `500` with generic client-facing messages.
+- Do not leak internal stack traces or database errors to clients.
