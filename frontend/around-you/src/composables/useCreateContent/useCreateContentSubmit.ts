@@ -33,7 +33,7 @@ type ContentSubmissionDestination = 'created' | 'suggested'
 
 const resolveGpsPosition = async (address: string, city: string) => {
   if (!address.trim() || !city.trim()) {
-    throw new Error('Please enter both address and city.')
+    throw new Error('Indtast både adresse og by.')
   }
 
   const location = await getGeocodedCoordinates(address.trim(), city.trim())
@@ -102,7 +102,7 @@ export const useCreateContentSubmit = (
 
   const submitEvent = async (): Promise<ContentSubmissionDestination> => {
     if (!eventHeroImageFile.value) {
-      throw new Error('Upload et billede til dette event.')
+    throw new Error('Upload et billede til dette arrangement.')
     }
 
     const token = getAuthToken()
@@ -201,7 +201,7 @@ export const useCreateContentSubmit = (
     const payload: CityPayload = {
       name: normalizeText(cityForm.name, { field: 'Navn', required: true, min: 3, max: 255 }),
       tagLine: normalizeText(cityForm.tagLine, {
-        field: 'Byens tagline',
+        field: 'Byens slogan',
         required: true,
         min: 20,
         max: 100,

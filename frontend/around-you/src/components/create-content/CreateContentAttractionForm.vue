@@ -2,7 +2,7 @@
   <input
     v-model="form.name"
     class="rounded-xl border border-slate-200 px-4 py-3"
-    placeholder="Name"
+    placeholder="Navn"
   />
   <CreateContentImageField
     :selected-file="heroImageFile"
@@ -12,7 +12,7 @@
     v-model="form.price"
     type="number"
     class="rounded-xl border border-slate-200 px-4 py-3"
-    placeholder="Price"
+    placeholder="Pris"
   />
   <input
     v-model="form.link"
@@ -22,12 +22,12 @@
   <input
     v-model="form.address"
     class="rounded-xl border border-slate-200 px-4 py-3"
-    placeholder="Address"
+    placeholder="Adresse"
   />
   <input
     v-model="form.city"
     class="rounded-xl border border-slate-200 px-4 py-3"
-    placeholder="City"
+    placeholder="By"
   />
   <CreateContentImageListField
     input-id="attraction-additional-images"
@@ -38,19 +38,19 @@
   <CategorySlugPicker
     v-model="form.slugArray"
     :options="categoryOptions"
-    label="Categories"
-    placeholder="Search or create category"
+    label="Kategorier"
+    placeholder="Søg eller opret kategori"
   />
   <input
     v-model="form.openingHoursText"
     class="rounded-xl border border-slate-200 px-4 py-3"
-    placeholder="Opening hours (comma separated)"
+    placeholder="Åbningstider (adskilt med komma)"
   />
   <textarea
     v-model="form.description"
     rows="4"
     class="rounded-xl border border-slate-200 px-4 py-3 sm:col-span-2"
-    placeholder="Description"
+    placeholder="Beskrivelse"
   ></textarea>
 </template>
 

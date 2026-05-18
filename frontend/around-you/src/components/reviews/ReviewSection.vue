@@ -7,6 +7,9 @@
       :model-value="form"
       :submitting="submitting"
       :submit-error="submitError"
+      :user-avatar="displayUserAvatar"
+      :user-initials="avatarInitials"
+      :user-name="userName"
       @update:model-value="form = $event"
       @submit="submitReview"
     />
@@ -37,6 +40,7 @@
         :key="review._id"
         :review="review"
         :is-authenticated="isAuthenticated"
+        :current-user-avatar="displayUserAvatar"
         :user-name="userName"
         :is-editing="editingId === review._id"
         :edit-form="editForm"
@@ -68,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import { toRef, watch } from 'vue'
+import { computed, toRef, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import ReportReviewModal from '@/components/reviews/ReportReviewModal.vue'
 import ReviewForm from '@/components/reviews/ReviewForm.vue'
@@ -76,6 +80,7 @@ import ReviewItem from '@/components/reviews/ReviewItem.vue'
 import { useReviewSection } from '@/composables/reviews/useReviewSection'
 import { useAuth } from '@/composables/useAuth'
 import { type ReviewTargetType } from '@/api/reviews.api'
+import { resolveApiAssetUrl } from '@/constants/config'
 
 const props = defineProps<{
   targetId: string
@@ -86,7 +91,8 @@ const emit = defineEmits<{
   (e: 'averageRating', value: number | null): void
 }>()
 
-const { isAuthenticated, userName } = useAuth()
+const { avatarInitials, isAuthenticated, userAvatar, userName } = useAuth()
+const displayUserAvatar = computed(() => resolveApiAssetUrl(userAvatar.value?.trim() || ''))
 
 const {
   reviews,

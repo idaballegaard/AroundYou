@@ -1,15 +1,28 @@
 <template>
   <li class="rounded-2xl border border-[#C1D2DE]/70 bg-white p-6 shadow-sm">
     <div class="mb-3 flex items-start justify-between gap-4">
-      <div>
-        <div class="flex items-center gap-2">
-          <p class="text-sm font-semibold text-[#de5826]">{{ review.author }}</p>
-          <span
-            v-if="review.edited"
-            class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-400"
-          >Redigeret</span>
+      <div class="flex items-start gap-3">
+        <div
+          class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#094b7b] to-[#de5826] text-xs font-black text-white"
+        >
+          <img
+            v-if="displayAuthorAvatar"
+            :src="displayAuthorAvatar"
+            :alt="`${review.author} avatar`"
+            class="h-full w-full object-cover"
+          />
+          <span v-else>{{ authorInitials }}</span>
         </div>
-        <p class="text-xs text-slate-400">{{ formatDate(review.createdAt) }}</p>
+        <div>
+          <div class="flex items-center gap-2">
+            <p class="text-sm font-semibold text-[#de5826]">{{ review.author }}</p>
+            <span
+              v-if="review.edited"
+              class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-400"
+            >Redigeret</span>
+          </div>
+          <p class="text-xs text-slate-400">{{ formatDate(review.createdAt) }}</p>
+        </div>
       </div>
       <div class="flex items-center gap-3">
         <div class="flex shrink-0 text-[#de5826]">
@@ -136,6 +149,7 @@
 import { computed } from 'vue'
 import type { ReviewItem } from '@/api/reviews.api'
 import { resolveApiAssetUrl } from '@/constants/config'
+import { getUserInitials } from '@/utils/auth'
 
 export type EditReviewFormModel = {
   title: string
@@ -147,6 +161,7 @@ export type EditReviewFormModel = {
 const props = defineProps<{
   review: ReviewItem
   isAuthenticated: boolean
+  currentUserAvatar: string
   userName: string
   isEditing: boolean
   editForm: EditReviewFormModel
@@ -167,6 +182,16 @@ const emit = defineEmits<{
 }>()
 
 const resolvedReviewImage = computed(() => resolveApiAssetUrl(props.review.image))
+const displayAuthorAvatar = computed(() => {
+  const authorAvatar = props.review.authorAvatar?.trim()
+
+  if (authorAvatar) {
+    return resolveApiAssetUrl(authorAvatar)
+  }
+
+  return props.review.author === props.userName ? props.currentUserAvatar : ''
+})
+const authorInitials = computed(() => getUserInitials(props.review.author))
 
 function updateField<K extends keyof EditReviewFormModel>(key: K, value: EditReviewFormModel[K]) {
   emit('update:editForm', {

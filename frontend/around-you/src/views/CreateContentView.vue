@@ -9,7 +9,7 @@
       <section class="bg-[#094b7b] px-8 py-8">
         <h1 class="text-4xl font-black tracking-tight text-white">Del din oplevelse med andre</h1>
         <p class="mt-2 text-base text-white">
-          Tilføj nye byer, events eller attraktioner og vær med til at inspirere andre brugere
+          Tilføj nye byer, arrangementer eller attraktioner og vær med til at inspirere andre brugere
         </p>
       </section>
 
@@ -57,7 +57,7 @@
             class="rounded-full bg-[#094b7b] px-6 py-3 text-sm font-semibold text-white sm:col-span-2"
             :disabled="isSubmitting || isUploadingImage"
           >
-            {{ isUploadingImage ? 'Uploading image...' : `Save ${selectedType}` }}
+            {{ isUploadingImage ? 'Uploader billede...' : submitButtonLabel }}
           </button>
         </form>
       </div>
@@ -72,7 +72,7 @@ import CreateContentEventForm from '@/components/create-content/CreateContentEve
 import CreateContentStatusMessage from '@/components/create-content/CreateContentStatusMessage.vue'
 import CreateContentTypeTabs from '@/components/create-content/CreateContentTypeTabs.vue'
 import { useCreateContent } from '@/composables/useCreateContent'
-import { nextTick, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 
 const {
   selectedType,
@@ -97,6 +97,18 @@ const {
 } = useCreateContent()
 
 const messageElement = ref<InstanceType<typeof CreateContentStatusMessage> | null>(null)
+
+const submitButtonLabel = computed(() => {
+  if (selectedType.value === 'event') {
+    return 'Gem arrangement'
+  }
+
+  if (selectedType.value === 'attraction') {
+    return 'Gem attraktion'
+  }
+
+  return 'Gem by'
+})
 
 const handleSubmit = async () => {
   await submitSelected()

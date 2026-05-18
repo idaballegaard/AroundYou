@@ -14,9 +14,9 @@
       :for="inputId"
       class="inline-flex cursor-pointer rounded-lg bg-[#094b7b] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#0b5d98]"
     >
-      Choose files
+      Vælg billeder
     </label>
-    <p class="mt-2 text-xs text-slate-600">{{ files.length }} image(s) selected</p>
+    <p class="mt-2 text-xs text-slate-600">{{ files.length }} billeder valgt</p>
     <div v-if="files.length" class="mt-3 flex flex-wrap gap-2">
       <span
         v-for="(file, index) in files"
@@ -27,7 +27,7 @@
         <button
           type="button"
           class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-sm leading-none transition hover:bg-white/70"
-          :aria-label="`Remove ${file.name}`"
+          :aria-label="`Fjern ${file.name}`"
           @click="emit('remove', index)"
         >
           x
@@ -45,7 +45,7 @@ withDefaults(
     label?: string
   }>(),
   {
-    label: 'Additional image files',
+    label: 'Ekstra billeder',
   },
 )
 

@@ -2,14 +2,14 @@
   <input
     v-model="form.name"
     class="rounded-xl border border-slate-200 px-4 py-3"
-    placeholder="City"
+    placeholder="By"
   />
   <input
     v-model="form.tagLine"
     class="rounded-xl border border-slate-200 px-4 py-3"
     minlength="20"
     maxlength="100"
-    placeholder="Tagline (20-100 characters)"
+    placeholder="Slogan (20-100 tegn)"
   />
   <CreateContentImageField
     :selected-file="heroImageFile"
@@ -18,7 +18,7 @@
   <input
     v-model="form.commune"
     class="rounded-xl border border-slate-200 px-4 py-3"
-    placeholder="Commune"
+    placeholder="Kommune"
   />
   <input
     v-model="form.region"
@@ -28,24 +28,24 @@
   <input
     v-model="form.country"
     class="rounded-xl border border-slate-200 px-4 py-3"
-    placeholder="Country"
+    placeholder="Land"
   />
   <input
     v-model="form.population"
     type="number"
     class="rounded-xl border border-slate-200 px-4 py-3"
-    placeholder="Population"
+    placeholder="Indbyggertal"
   />
   <input
     v-model="form.visitorCenter"
     class="rounded-xl border border-slate-200 px-4 py-3"
-    placeholder="Visitor center"
+    placeholder="Besøgscenter"
   />
   <textarea
     v-model="form.description"
     rows="4"
     class="rounded-xl border border-slate-200 px-4 py-3 sm:col-span-2"
-    placeholder="Description"
+    placeholder="Beskrivelse"
   ></textarea>
 </template>
 

@@ -4,6 +4,10 @@ import {
   notifyReviewAuthorReviewRemoved,
   notifyReviewReporters,
 } from "../services/reviewNotification.service";
+import {
+  attachAuthorAvatar,
+  attachAuthorAvatars,
+} from "../services/reviewAuthorAvatar.service";
 import { buildDynamicQuery } from "../utils/dynamicQueryBuilder";
 import {
   getHideUpdate,
@@ -40,7 +44,7 @@ export async function createReview(req: Request, res: Response): Promise<void> {
     });
     const result = await review.save();
 
-    res.status(201).json(result);
+    res.status(201).json(await attachAuthorAvatar(result));
   } catch (err) {
     console.error("Error creating review:", err);
     if (isValidationError(err)) {
@@ -63,7 +67,7 @@ export async function getAllReviews(
 ): Promise<void> {
   try {
     const result = await ReviewModel.find(visibleFilter(req));
-    res.status(200).json(result);
+    res.status(200).json(await attachAuthorAvatars(result));
   } catch (err) {
     console.error("Error fetching reviews:", err);
     res.status(500).json({
@@ -90,7 +94,7 @@ export async function getReviewById(
       return;
     }
 
-    res.status(200).json(result);
+    res.status(200).json(await attachAuthorAvatar(result));
   } catch (err) {
     console.error("Error fetching review:", err);
     res.status(500).json({
@@ -136,7 +140,7 @@ export async function updateReviewById(
 
     res.status(200).json({
       message: "Review updated successfully",
-      data: result,
+      data: await attachAuthorAvatar(result),
     });
   } catch (err) {
     console.error("Error updating review:", err);
@@ -194,7 +198,10 @@ export async function deleteReviewById(
 
     res
       .status(200)
-      .json({ message: "Review hidden successfully", data: result });
+      .json({
+        message: "Review hidden successfully",
+        data: await attachAuthorAvatar(result),
+      });
   } catch (err) {
     console.error("Error deleting review:", err);
     if (isValidationError(err)) {
@@ -233,7 +240,7 @@ export async function restoreReviewById(
 
     res.status(200).json({
       message: "Review restored successfully",
-      data: result,
+      data: await attachAuthorAvatar(result),
     });
   } catch (err) {
     console.error("Error restoring review:", err);
@@ -259,7 +266,7 @@ export async function getReviewByQuery(
       [key]: { $regex: value, $options: "i" },
     });
 
-    res.status(200).json(result);
+    res.status(200).json(await attachAuthorAvatars(result));
   } catch (err) {
     console.error("Error querying reviews:", err);
     res.status(500).json({
@@ -283,7 +290,7 @@ export async function getReviewByGenericQuery(
       ...visibleFilter(req),
     });
 
-    res.status(200).json(result);
+    res.status(200).json(await attachAuthorAvatars(result));
   } catch (err) {
     console.error("Error generic review query:", err);
     res.status(500).json({
@@ -305,7 +312,7 @@ export async function getReviewsByTarget(
       targetId,
       ...visibleFilter(req),
     }).sort({ createdAt: -1 });
-    res.status(200).json(result);
+    res.status(200).json(await attachAuthorAvatars(result));
   } catch (err) {
     console.error("Error fetching reviews by target:", err);
     res.status(500).json({ message: "Error retrieving reviews" });
@@ -347,7 +354,7 @@ export async function editReview(req: Request, res: Response): Promise<void> {
       { new: true, runValidators: true },
     );
 
-    res.status(200).json(updated);
+    res.status(200).json(await attachAuthorAvatar(updated));
   } catch (err) {
     console.error("Error editing review:", err);
     if (isValidationError(err)) {
@@ -393,7 +400,7 @@ export async function likeReview(req: Request, res: Response): Promise<void> {
       { new: true },
     );
 
-    res.status(200).json(updated);
+    res.status(200).json(await attachAuthorAvatar(updated));
   } catch (err) {
     console.error("Error liking review:", err);
     res.status(500).json({ message: "Error updating like" });

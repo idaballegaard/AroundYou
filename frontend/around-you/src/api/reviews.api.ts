@@ -8,6 +8,7 @@ export interface ReviewItem {
   targetId: string
   targetType: ReviewTargetType
   author: string
+  authorAvatar?: string
   title: string
   description: string
   rating: number

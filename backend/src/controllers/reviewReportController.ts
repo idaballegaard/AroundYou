@@ -1,5 +1,9 @@
 import { Request, Response } from "express";
 import { ReviewModel } from "../models/reviewModel";
+import {
+  attachAuthorAvatar,
+  attachAuthorAvatars,
+} from "../services/reviewAuthorAvatar.service";
 import { notifyReviewReporters } from "../services/reviewNotification.service";
 import { visibleFilter } from "./controllerUtils";
 
@@ -46,7 +50,7 @@ export async function reportReview(req: Request, res: Response): Promise<void> {
     review.reportResolvedBy = undefined;
 
     const result = await review.save();
-    res.status(200).json(result);
+    res.status(200).json(await attachAuthorAvatar(result));
   } catch (err) {
     console.error("Fejl igang med reviewet:", err);
     res.status(500).json({ message: "Fejl anmeldese af review" });
@@ -66,7 +70,7 @@ export async function getReportedReviews(
       ...(includeResolved ? {} : { reportResolved: false }),
     }).sort({ reportCount: -1, createdAt: -1 });
 
-    res.status(200).json(result);
+    res.status(200).json(await attachAuthorAvatars(result));
   } catch (err) {
     console.error("Error fetching reported reviews:", err);
     res.status(500).json({ message: "Error retrieving reported reviews" });
@@ -91,7 +95,7 @@ export async function resolveReviewReport(
 
     const result = await review.save();
     await notifyReviewReporters(review, false);
-    res.status(200).json(result);
+    res.status(200).json(await attachAuthorAvatar(result));
   } catch (err) {
     console.error("Error resolving review report:", err);
     res.status(500).json({ message: "Error resolving review report" });

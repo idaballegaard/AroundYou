@@ -23,7 +23,7 @@
         @click="addCategory(item.value)"
       >
         <span>{{ item.label }}</span>
-        <span v-if="item.isNew" class="text-xs text-[#094b7b]">Create</span>
+        <span v-if="item.isNew" class="text-xs text-[#094b7b]">Opret</span>
       </button>
     </div>
 
@@ -54,8 +54,8 @@ const props = withDefaults(
   }>(),
   {
     options: () => [],
-    label: 'Categories',
-    placeholder: 'Search or create category',
+    label: 'Kategorier',
+    placeholder: 'Søg eller opret kategori',
   },
 )
 

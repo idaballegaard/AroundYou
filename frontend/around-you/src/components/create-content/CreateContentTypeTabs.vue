@@ -23,8 +23,8 @@ defineProps<{
 const model = defineModel<ContentType>({ required: true })
 
 const contentTypeOptions: { value: ContentType; label: string }[] = [
-  { value: 'event', label: 'Event' },
-  { value: 'attraction', label: 'Attraction' },
-  { value: 'city', label: 'City' },
+  { value: 'event', label: 'Arrangement' },
+  { value: 'attraction', label: 'Attraktion' },
+  { value: 'city', label: 'By' },
 ]
 </script>
