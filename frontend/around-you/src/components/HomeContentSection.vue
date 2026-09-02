@@ -6,9 +6,7 @@
           v-if="icon"
           :class="iconClassName"
           aria-hidden="true"
-        >
-          {{ icon }}
-        </span>
+        ></span>
         <div class="min-w-0">
           <h2 :class="titleClassName">{{ title }}</h2>
           <p :class="descriptionClassName">{{ description }}</p>

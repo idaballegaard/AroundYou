@@ -7,7 +7,7 @@
     <div class="pointer-events-none absolute inset-0 bg-[#e8c7aa]/55"></div>
 
     <!-- White content card -->
-    <div class="relative z-10 mx-3 overflow-hidden rounded-2xl bg-white shadow-2xl sm:mx-auto sm:max-w-6xl">
+    <div class="relative z-10 mx-3 overflow-hidden rounded-2xl bg-white shadow-2xl sm:mx-[50px]">
       <section class="px-5 pb-6 pt-9 text-center sm:px-12 sm:pb-8 sm:pt-12">
         <h1 class="text-3xl font-extrabold leading-tight text-[#094b7b] sm:text-5xl">
           Hvad sker der omkring dig?
