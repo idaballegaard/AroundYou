@@ -19,7 +19,13 @@
           <span class="text-xl leading-none" aria-hidden="true">●</span>
           <span>{{ userLocation }}</span>
           <span class="mx-1 text-gray-300" aria-hidden="true">|</span>
-          <span class="cursor-default text-sm underline underline-offset-2 sm:text-base">Skift lokation</span>
+          <button
+            type="button"
+            class="text-sm underline underline-offset-2 transition hover:text-[#de5826] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#094b7b] sm:text-base"
+            @click="changeLocation"
+          >
+            Skift lokation
+          </button>
         </div>
       </section>
 
@@ -110,6 +116,7 @@ import HomeContentSection from '@/components/HomeContentSection.vue'
 import { useHomeViewData } from '@/composables/home/useHomeViewData'
 
 const {
+  changeLocation,
   userLocation,
   nearbyCards,
   nearbyLoading,
