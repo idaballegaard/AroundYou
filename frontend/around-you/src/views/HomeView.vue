@@ -26,7 +26,7 @@
       <div class="space-y-3 px-3 pb-6 sm:space-y-4 sm:px-8 sm:pb-10">
       <HomeContentSection
         title="Sker lige nu"
-        description="Aktiviteter og oplevelser tæt på dig lige nu."
+        description="Aktiviteter og oplevelser tæt på dig lige nu. Starter inden for den næste time"
         :loading="nearbyLoading"
         :error="nearbyError"
         :cards="nowCards"
@@ -42,7 +42,7 @@
 
       <HomeContentSection
         title="Starter snart"
-        description="Oplevelser, der er på vej til at begynde."
+        description="Oplevelser, der er på vej til at begynde. Starter inden for de næste 2 timer"
         :loading="citiesLoading"
         :error="citiesError"
         :cards="cityCards"
