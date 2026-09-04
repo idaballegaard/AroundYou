@@ -91,7 +91,7 @@
 
       <div class="pb-8 text-center sm:pb-10">
         <RouterLink
-          :to="{ name: 'mapview' }"
+          :to="{ name: 'search' }"
           class="inline-flex items-center gap-3 rounded-full bg-[#094b7b] px-6 py-3 text-sm font-bold text-white shadow-[0_12px_25px_rgba(9,75,123,0.22)] transition hover:bg-[#0b5d98] sm:text-base"
         >
           <span aria-hidden="true">⌘</span>
