@@ -11,8 +11,10 @@
   <input
     v-model="form.price"
     type="number"
+    min="0"
+    step="1"
     class="rounded-xl border border-slate-200 px-4 py-3"
-    placeholder="Pris"
+    placeholder="Pris (kr.)"
   />
   <input
     v-model="form.link"

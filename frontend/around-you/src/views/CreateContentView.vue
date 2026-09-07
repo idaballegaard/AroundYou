@@ -22,7 +22,7 @@
           :message-type="messageType"
         />
 
-        <form class="grid gap-4 sm:grid-cols-2" @submit.prevent="handleSubmit">
+        <form class="grid gap-4 sm:grid-cols-2" novalidate @submit.prevent="handleSubmit">
           <CreateContentEventForm
             v-if="selectedType === 'event'"
             v-model="eventForm"
