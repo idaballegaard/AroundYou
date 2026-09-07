@@ -63,6 +63,14 @@
           @toggle="toggleCategories"
           @toggle-category="toggleCategory"
         />
+
+        <button
+          type="button"
+          class="rounded-full border border-[#094b7b]/25 bg-white px-4 py-1.5 text-sm font-semibold text-[#094b7b] transition hover:border-[#094b7b] hover:bg-[#094b7b] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#094b7b]"
+          @click="resetFilters"
+        >
+          Nulstil filtre
+        </button>
       </div>
     </div>
   </section>
@@ -111,6 +119,7 @@ const {
   openCategories,
   openLocation,
   removeCategory,
+  resetFilters,
   selectDate,
   selectLocation,
   toggleCategories,

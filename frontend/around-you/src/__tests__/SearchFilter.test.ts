@@ -78,6 +78,26 @@ describe('SearchFilter', () => {
     wrapper.unmount()
   })
 
+  it('clears all active filters when reset is selected', async () => {
+    const wrapper = mountFilter({
+      location: 'Ribe',
+      types: ['event'],
+      date: '2026-09-07',
+      categories: ['culture'],
+    })
+
+    await wrapper.findAll('button').find((button) => button.text() === 'Nulstil filtre')?.trigger('click')
+
+    expect(lastEmittedModelValue(wrapper)).toEqual({
+      location: '',
+      types: [],
+      date: '',
+      categories: [],
+    })
+
+    wrapper.unmount()
+  })
+
   it('closes open dropdowns when clicking outside the filter', async () => {
     const wrapper = mountFilter()
     const removeListenerSpy = vi.spyOn(document, 'removeEventListener')

@@ -136,6 +136,15 @@ export function useSearchFilter(props: SearchFilterProps, emit: SearchFilterEmit
     currentMonth.value += 1
   }
 
+  const resetFilters = () => {
+    draft.location = ''
+    draft.types = []
+    draft.date = ''
+    draft.categories = []
+    categoryQuery.value = ''
+    dropdowns.closeAll()
+  }
+
   return {
     ...dropdowns,
     addCategoryFromQuery,
@@ -153,6 +162,7 @@ export function useSearchFilter(props: SearchFilterProps, emit: SearchFilterEmit
     goToPreviousMonth,
     monthLabel,
     removeCategory,
+    resetFilters,
     selectDate,
     selectLocation,
     toggleCategory,
