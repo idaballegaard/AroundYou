@@ -27,7 +27,7 @@ export const adminCollections: AdminCollectionConfig[] = [
       { key: 'region', label: 'Region', type: 'text', required: true },
       { key: 'country', label: 'Land', type: 'text', required: true },
       { key: 'population', label: 'Indbyggertal', type: 'number', required: true },
-      { key: 'visitorCenter', label: 'Besøgscenter', type: 'text', required: true },
+      { key: 'visitorCenter', label: 'Besøgscenter', type: 'text' },
     ],
   },
   {
