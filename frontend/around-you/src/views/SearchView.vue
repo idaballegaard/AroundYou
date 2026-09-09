@@ -10,8 +10,8 @@
         <h1 class="text-5xl font-black tracking-tight text-[#094b7b]">Find noget, du har lyst til</h1>
         <p class="mt-2 text-xl text-[#094b7b]">Udforsk events, aktiviteter og fællesskaber omkring dig.</p>
         <div class="mt-5 flex items-center gap-2 text-sm font-semibold text-[#094b7b] sm:text-lg">
-          <span class="text-xl leading-none" aria-hidden="true">●</span>
-          <span>{{ userLocationName }}</span>
+          <span class="text-xl leading-none text-[#de5826]" aria-hidden="true">●</span>
+          <span class="text-[#de5826]">{{ userLocationName }}</span>
           <span class="mx-1 text-gray-300" aria-hidden="true">|</span>
           <button
             type="button"

@@ -16,8 +16,8 @@
           Find oplevelser, aktiviteter og events – lige nu eller snart.
         </p>
         <div class="mt-4 flex items-center justify-center gap-2 text-sm font-semibold text-[#094b7b] sm:text-lg">
-          <span class="text-xl leading-none" aria-hidden="true">●</span>
-          <span>{{ userLocation }}</span>
+          <span class="text-xl leading-none text-[#de5826]" aria-hidden="true">●</span>
+          <span class="text-[#de5826]">{{ userLocation }}</span>
           <span class="mx-1 text-gray-300" aria-hidden="true">|</span>
           <button
             type="button"
