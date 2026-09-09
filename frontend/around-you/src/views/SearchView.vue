@@ -7,8 +7,20 @@
 
     <div class="relative z-10 mx-4 sm:mx-[50px] bg-white shadow-2xl rounded-xl overflow-hidden">
       <section class="bg-white px-8 py-8">
-        <h1 class="text-5xl font-black tracking-tight text-[#094b7b]">Oplev noget nyt i Danmark</h1>
-        <p class="mt-2 text-xl text-[#094b7b]">Find events, attraktioner og spændende steder nær dig eller i resten af landet.</p>
+        <h1 class="text-5xl font-black tracking-tight text-[#094b7b]">Hvad sker der omkring dig?</h1>
+        <p class="mt-2 text-xl text-[#094b7b]">Find noget at lave lige nu, snart eller senere i dag.</p>
+        <div class="mt-5 flex items-center gap-2 text-sm font-semibold text-[#094b7b] sm:text-lg">
+          <span class="text-xl leading-none" aria-hidden="true">●</span>
+          <span>{{ userLocationName }}</span>
+          <span class="mx-1 text-gray-300" aria-hidden="true">|</span>
+          <button
+            type="button"
+            class="text-sm underline underline-offset-2 transition hover:text-[#de5826] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#094b7b] sm:text-base"
+            @click="changeLocation"
+          >
+            Skift lokation
+          </button>
+        </div>
       </section>
 
       <section class="px-4 pt-4 pb-8 sm:px-8 sm:pt-6 sm:pb-10">
@@ -75,6 +87,7 @@ import { useSearchView } from '@/composables/search/useSearchView'
 
 const {
   categoryOptions,
+  changeLocation,
   errorMessage,
   filters,
   handleMapMarkerSelected,
@@ -85,6 +98,7 @@ const {
   resultsGrid,
   selectedCityCenter,
   selectedResultId,
+  userLocationName,
   visibleResults,
 } = useSearchView()
 </script>

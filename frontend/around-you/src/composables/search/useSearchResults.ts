@@ -82,6 +82,24 @@ export const useSearchResults = (filters: Ref<SearchFilters>) => {
     }
   })
 
+  const userLocationName = computed(() => {
+    const coords = userCoordinates.value
+
+    if (!coords) {
+      return 'din lokation'
+    }
+
+    const nearestCity = results.value
+      .filter((item) => item.type === 'city' && item.coordinates)
+      .map((item) => ({
+        name: item.title,
+        distance: distanceBetweenSearchCoordinates(coords, item.coordinates!),
+      }))
+      .sort((first, second) => first.distance - second.distance)[0]
+
+    return nearestCity?.name ?? 'din lokation'
+  })
+
   const locationSortedExperienceResults = computed(() => {
     const coords = userCoordinates.value
 
@@ -175,6 +193,8 @@ export const useSearchResults = (filters: Ref<SearchFilters>) => {
     categoryOptions,
     isUsingLocationResults,
     isShowingLargestCities,
+    userLocationName,
+    changeLocation: () => geolocationStore.getLocation(),
     isLoading,
     errorMessage,
     fetchResults,

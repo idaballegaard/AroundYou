@@ -34,10 +34,12 @@ export const useSearchView = () => {
     cityCoordinates,
     locationOptions,
     categoryOptions,
+    changeLocation,
     isUsingLocationResults,
     isShowingLargestCities,
     isLoading,
     errorMessage,
+    userLocationName,
   } = useSearchResults(filters)
 
   const currentPage = ref(1)
@@ -138,6 +140,7 @@ export const useSearchView = () => {
 
   return {
     categoryOptions,
+    changeLocation,
     currentPage,
     errorMessage,
     filters,
@@ -156,5 +159,6 @@ export const useSearchView = () => {
     selectedResultId,
     toSearchResultCard,
     totalPages,
+    userLocationName,
   }
 }
