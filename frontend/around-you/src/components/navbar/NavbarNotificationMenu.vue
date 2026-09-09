@@ -1,5 +1,5 @@
 <template>
-  <div class="relative">
+  <div ref="notificationMenuRef" class="relative">
     <button
       type="button"
       class="relative rounded-full border border-[#094b7b]/12 px-3 py-2 text-sm font-bold text-[#094b7b] transition hover:bg-[#C1D2DE]"
@@ -74,9 +74,10 @@
 </template>
 
 <script setup lang="ts">
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import type { AppNotification } from '@/types/notification'
 
-defineProps<{
+const props = defineProps<{
   error: string
   isLoading: boolean
   isOpen: boolean
@@ -88,8 +89,25 @@ const emit = defineEmits<{
   'mark-all-read': []
   'mark-read': [id: string]
   'remove-all': []
+  close: []
   toggle: []
 }>()
+
+const notificationMenuRef = ref<HTMLElement | null>(null)
+
+const handleDocumentClick = (event: MouseEvent) => {
+  if (
+    props.isOpen &&
+    event.target instanceof Node &&
+    notificationMenuRef.value &&
+    !notificationMenuRef.value.contains(event.target)
+  ) {
+    emit('close')
+  }
+}
+
+onMounted(() => document.addEventListener('click', handleDocumentClick))
+onBeforeUnmount(() => document.removeEventListener('click', handleDocumentClick))
 
 function formatNotificationDate(value: string): string {
   return new Date(value).toLocaleString('da-DK', {

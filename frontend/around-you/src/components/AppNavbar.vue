@@ -51,6 +51,7 @@
             @mark-all-read="markAllRead"
             @mark-read="markRead"
             @remove-all="removeAllNotifications"
+            @close="closeNotificationMenu"
             @toggle="toggleNotificationMenu"
           />
 
