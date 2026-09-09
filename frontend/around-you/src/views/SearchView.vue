@@ -7,8 +7,8 @@
 
     <div class="relative z-10 mx-4 sm:mx-[50px] bg-white shadow-2xl rounded-xl overflow-hidden">
       <section class="bg-white px-8 py-8">
-        <h1 class="text-5xl font-black tracking-tight text-[#094b7b]">Hvad sker der omkring dig?</h1>
-        <p class="mt-2 text-xl text-[#094b7b]">Find noget at lave lige nu, snart eller senere i dag.</p>
+        <h1 class="text-5xl font-black tracking-tight text-[#094b7b]">Find noget, du har lyst til</h1>
+        <p class="mt-2 text-xl text-[#094b7b]">Udforsk events, aktiviteter og fællesskaber omkring dig.</p>
         <div class="mt-5 flex items-center gap-2 text-sm font-semibold text-[#094b7b] sm:text-lg">
           <span class="text-xl leading-none" aria-hidden="true">●</span>
           <span>{{ userLocationName }}</span>
