@@ -5,6 +5,7 @@ export type ApiEvent = {
   heroImage: string
   rating?: number
   startDate: string
+  endDate?: string
   gpsPosition?: string
   slugArray?: string[]
 }

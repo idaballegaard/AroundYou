@@ -26,6 +26,8 @@ export const useSearchView = () => {
     location: '',
     types: getInitialSearchTypes(route.query.type),
     date: '',
+    time: '',
+    customTime: '',
     categories: [],
   })
 

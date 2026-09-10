@@ -7,7 +7,7 @@
       <input
         :value="location"
         type="text"
-        placeholder="Lokation"
+        :placeholder="placeholder"
         class="w-full bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:text-slate-700"
         @click.stop
         @focus="emit('open')"
@@ -40,6 +40,7 @@ defineProps<{
   isOpen: boolean
   location: string
   options: string[]
+  placeholder?: string
 }>()
 
 const emit = defineEmits<{

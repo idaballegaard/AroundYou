@@ -5,6 +5,7 @@ export function useSearchFilterDropdowns() {
   const isTypeOpen = ref(false)
   const isDateOpen = ref(false)
   const isCategoriesOpen = ref(false)
+  const isTimeOpen = ref(false)
   const filterRef = ref<HTMLElement | null>(null)
 
   const closeAll = () => {
@@ -12,6 +13,7 @@ export function useSearchFilterDropdowns() {
     isTypeOpen.value = false
     isDateOpen.value = false
     isCategoriesOpen.value = false
+    isTimeOpen.value = false
   }
 
   const toggleOpenState = (openState: typeof isLocationOpen) => {
@@ -42,6 +44,7 @@ export function useSearchFilterDropdowns() {
     isCategoriesOpen,
     isDateOpen,
     isLocationOpen,
+    isTimeOpen,
     isTypeOpen,
     openCategories: () => {
       closeAll()
@@ -51,6 +54,7 @@ export function useSearchFilterDropdowns() {
       closeAll()
       isLocationOpen.value = true
     },
+    toggleTime: () => toggleOpenState(isTimeOpen),
     toggleCategories: () => toggleOpenState(isCategoriesOpen),
     toggleDate: () => toggleOpenState(isDateOpen),
     toggleLocation: () => toggleOpenState(isLocationOpen),

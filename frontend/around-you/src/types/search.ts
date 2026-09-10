@@ -1,9 +1,12 @@
-export type SearchFilterType = 'event' | 'attraction'
+export type SearchFilterType = 'event' | 'activity' | 'community'
+export type SearchTimeFilter = 'now' | 'next-hours' | 'later-today' | 'custom'
 
 export type SearchFilters = {
   location: string
   types: SearchFilterType[]
   date: string
+  time: SearchTimeFilter | ''
+  customTime: string
   categories: string[]
 }
 
@@ -15,6 +18,8 @@ export type SearchResult = {
   coordinates: Coordinates | null
   type: 'event' | 'attraction' | 'city'
   date: string
+  startDateTime: string
+  endDateTime: string
   rating: number
   reviews: number
   image: string
@@ -28,6 +33,7 @@ export type ApiEvent = {
   heroImage: string
   rating?: number
   startDate: string
+  endDate?: string
   gpsPosition?: string
   slugArray?: string[]
 }

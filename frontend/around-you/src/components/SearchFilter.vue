@@ -20,19 +20,10 @@
           v-model:location="draft.location"
           :is-open="isLocationOpen"
           :options="filteredLocationOptions"
+          :placeholder="defaultLocation || 'Lokation'"
           @open="openLocation"
           @select="selectLocation"
           @toggle="toggleLocation"
-        />
-
-        <div class="hidden h-6 w-px bg-slate-300/70 lg:block" />
-
-        <SearchFilterTypeField
-          :is-open="isTypeOpen"
-          :type-dot-class="typeDotClass"
-          @clear="clearTypeFilters"
-          @toggle="toggleType"
-          @toggle-type="toggleTypeFilter"
         />
 
         <div class="hidden h-6 w-px bg-slate-300/70 lg:block" />
@@ -48,6 +39,27 @@
           @previous-month="goToPreviousMonth"
           @select-date="selectDate"
           @toggle="toggleDate"
+        />
+
+        <div class="hidden h-6 w-px bg-slate-300/70 lg:block" />
+
+        <SearchFilterTimeField
+          :custom-time="draft.customTime"
+          :is-open="isTimeOpen"
+          :time="draft.time"
+          @select="selectTime"
+          @toggle="toggleTime"
+          @update:custom-time="draft.customTime = $event"
+        />
+
+        <div class="hidden h-6 w-px bg-slate-300/70 lg:block" />
+
+        <SearchFilterTypeField
+          :is-open="isTypeOpen"
+          :type-dot-class="typeDotClass"
+          @clear="clearTypeFilters"
+          @toggle="toggleType"
+          @toggle-type="toggleTypeFilter"
         />
 
         <div class="hidden h-6 w-px bg-slate-300/70 lg:block" />
@@ -81,6 +93,7 @@ import { ref } from 'vue'
 import SearchFilterCategoryField from '@/components/search-filter/SearchFilterCategoryField.vue'
 import SearchFilterDateField from '@/components/search-filter/SearchFilterDateField.vue'
 import SearchFilterLocationField from '@/components/search-filter/SearchFilterLocationField.vue'
+import SearchFilterTimeField from '@/components/search-filter/SearchFilterTimeField.vue'
 import SearchFilterTypeField from '@/components/search-filter/SearchFilterTypeField.vue'
 import { useSearchFilter } from '@/composables/search-filter/useSearchFilter'
 import type { SearchFilters } from '@/types/search'
@@ -90,10 +103,12 @@ const props = withDefaults(
     modelValue: SearchFilters
     locationOptions?: string[]
     categoryOptions?: string[]
+    defaultLocation?: string
   }>(),
   {
     locationOptions: () => [],
     categoryOptions: () => [],
+    defaultLocation: '',
   },
 )
 const emit = defineEmits<{ (event: 'update:modelValue', value: SearchFilters): void }>()
@@ -114,6 +129,7 @@ const {
   isCategoriesOpen,
   isDateOpen,
   isLocationOpen,
+  isTimeOpen,
   isTypeOpen,
   monthLabel,
   openCategories,
@@ -122,10 +138,12 @@ const {
   resetFilters,
   selectDate,
   selectLocation,
+  selectTime,
   toggleCategories,
   toggleCategory,
   toggleDate,
   toggleLocation,
+  toggleTime,
   toggleType,
   toggleTypeFilter,
   typeDotClass,

@@ -67,6 +67,8 @@ export const useSearchResults = (filters: Ref<SearchFilters>) => {
       filters.value.location.trim().length > 0 ||
       filters.value.types.length > 0 ||
       filters.value.date.length > 0 ||
+      Boolean(filters.value.time) ||
+      filters.value.customTime.length > 0 ||
       filters.value.categories.length > 0
     )
   })
@@ -159,15 +161,52 @@ export const useSearchResults = (filters: Ref<SearchFilters>) => {
 
     return visibleResults.value.filter((item) => {
       const matchesLocation = hasQuery ? item.location.toLowerCase().includes(query) : true
-      const matchesType =
-        filters.value.types.length === 0 ||
-        filters.value.types.includes(item.type as SearchFilters['types'][number])
+      const matchesType = filters.value.types.length === 0 || filters.value.types.some((type) => {
+        if (type === 'event') return item.type === 'event'
+        if (type === 'activity') return item.type === 'attraction'
+
+        return item.categories.some((category) => /fællesskab|community/i.test(category))
+      })
       const matchesDate = filters.value.date ? item.date === filters.value.date : true
+      const matchesTime = (() => {
+        if (!filters.value.time) return true
+
+        const start = new Date(item.startDateTime)
+        const end = new Date(item.endDateTime || item.startDateTime)
+
+        if (item.type !== 'event' || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+          return false
+        }
+
+        const now = new Date()
+
+        if (filters.value.time === 'now') {
+          return start <= now && end >= now
+        }
+
+        if (filters.value.time === 'next-hours') {
+          const nextHours = new Date(now.getTime() + 3 * 60 * 60 * 1000)
+          return start > now && start <= nextHours
+        }
+
+        if (filters.value.time === 'later-today') {
+          const nextHours = new Date(now.getTime() + 3 * 60 * 60 * 1000)
+          return (
+            start > nextHours &&
+            start.getFullYear() === now.getFullYear() &&
+            start.getMonth() === now.getMonth() &&
+            start.getDate() === now.getDate()
+          )
+        }
+
+        return Boolean(filters.value.customTime) &&
+          start.toTimeString().slice(0, 5) >= filters.value.customTime
+      })()
       const matchesCategories = filters.value.categories.length
         ? filters.value.categories.some((category) => item.categories.includes(category))
         : true
 
-      return matchesLocation && matchesType && matchesDate && matchesCategories
+      return matchesLocation && matchesType && matchesDate && matchesTime && matchesCategories
     })
   })
 

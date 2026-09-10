@@ -16,6 +16,8 @@ const baseFilters: SearchFilters = {
   location: '',
   types: [],
   date: '',
+  time: '',
+  customTime: '',
   categories: [],
 }
 
@@ -28,6 +30,8 @@ const results: SearchResult[] = [
     coordinates: { lat: 56.1629, lng: 10.2039 },
     type: 'city',
     date: '',
+    startDateTime: '',
+    endDateTime: '',
     rating: 4.8,
     reviews: 12,
     image: 'aarhus.jpg',
@@ -41,6 +45,8 @@ const results: SearchResult[] = [
     coordinates: { lat: 56.16, lng: 10.2 },
     type: 'event',
     date: '2026-06-10',
+    startDateTime: '2026-06-10T12:00:00.000Z',
+    endDateTime: '2026-06-10T13:00:00.000Z',
     rating: 4.5,
     reviews: 3,
     image: 'food.jpg',
@@ -54,6 +60,8 @@ const results: SearchResult[] = [
     coordinates: null,
     type: 'attraction',
     date: '2026-05-01',
+    startDateTime: '',
+    endDateTime: '',
     rating: 4.1,
     reviews: 5,
     image: 'museum.jpg',
@@ -64,7 +72,7 @@ const results: SearchResult[] = [
 describe('search view helpers', () => {
   it('normalizes route type query values into supported initial filters', () => {
     expect(getInitialSearchTypes('event')).toEqual(['event'])
-    expect(getInitialSearchTypes(['attraction', 'event'])).toEqual(['attraction'])
+    expect(getInitialSearchTypes(['attraction', 'event'])).toEqual(['activity'])
     expect(getInitialSearchTypes('city')).toEqual([])
     expect(getInitialSearchTypes(undefined)).toEqual([])
   })

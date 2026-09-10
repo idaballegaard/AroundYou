@@ -8,6 +8,8 @@ export function useSearchFilterDraft(props: SearchFilterProps, emit: SearchFilte
     location: props.modelValue.location,
     types: [...props.modelValue.types],
     date: props.modelValue.date,
+    time: props.modelValue.time,
+    customTime: props.modelValue.customTime,
     categories: [...props.modelValue.categories],
   })
 
@@ -22,6 +24,8 @@ export function useSearchFilterDraft(props: SearchFilterProps, emit: SearchFilte
       draft.location = value.location
       draft.types = [...value.types]
       draft.date = value.date
+      draft.time = value.time
+      draft.customTime = value.customTime
       draft.categories = [...value.categories]
       isSyncingFromParent = false
     },
@@ -37,6 +41,8 @@ export function useSearchFilterDraft(props: SearchFilterProps, emit: SearchFilte
         location: draft.location,
         types: [...draft.types],
         date: draft.date,
+        time: draft.time,
+        customTime: draft.customTime,
         categories: [...draft.categories],
       }
 

@@ -14,6 +14,8 @@ export const areFiltersEqual = (first: SearchFilters, second: SearchFilters) => 
   return (
     first.location === second.location &&
     first.date === second.date &&
+    first.time === second.time &&
+    first.customTime === second.customTime &&
     areStringArraysEqual(first.types, second.types) &&
     areStringArraysEqual(first.categories, second.categories)
   )

@@ -30,6 +30,7 @@
             v-model="filters"
             :location-options="locationOptions"
             :category-options="categoryOptions"
+            :default-location="userLocationName"
           />
 
           <div class="grid gap-6 lg:grid-cols-[calc(50vw-90px)_minmax(400px,1fr)] lg:items-start lg:justify-between">

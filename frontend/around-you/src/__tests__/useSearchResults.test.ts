@@ -65,6 +65,7 @@ const events = [
     heroImage: 'food.jpg',
     rating: 4.5,
     startDate: '2026-06-10T12:00:00.000Z',
+    endDate: '2026-06-10T13:00:00.000Z',
     gpsPosition: '56.16, 10.2',
     slugArray: ['food', 'family'],
   },
@@ -124,7 +125,7 @@ describe('useSearchResults', () => {
   })
 
   it('loads search data, exposes filter options, and falls back to largest cities without location', async () => {
-    const { state } = mountSearchHarness({ location: '', types: [], date: '', categories: [] })
+    const { state } = mountSearchHarness({ location: '', types: [], date: '', time: '', customTime: '', categories: [] })
 
     await flushPromises()
 
@@ -145,6 +146,8 @@ describe('useSearchResults', () => {
       location: 'aar',
       types: ['event'],
       date: '2026-06-10',
+      time: '',
+      customTime: '',
       categories: ['food'],
     })
 
@@ -164,7 +167,7 @@ describe('useSearchResults', () => {
   it('returns nearest experiences when user coordinates are available and no filters are active', async () => {
     geolocationState.coords = { latitude: 56.162, longitude: 10.2 }
 
-    const { state } = mountSearchHarness({ location: '', types: [], date: '', categories: [] })
+    const { state } = mountSearchHarness({ location: '', types: [], date: '', time: '', customTime: '', categories: [] })
 
     await flushPromises()
 
@@ -179,7 +182,7 @@ describe('useSearchResults', () => {
   it('surfaces API errors and stops loading', async () => {
     fetchEventsMock.mockRejectedValueOnce(new Error('Search API unavailable'))
 
-    const { state } = mountSearchHarness({ location: '', types: [], date: '', categories: [] })
+    const { state } = mountSearchHarness({ location: '', types: [], date: '', time: '', customTime: '', categories: [] })
 
     await flushPromises()
     await nextTick()

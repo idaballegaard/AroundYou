@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import type { SearchFilterType } from '@/types/search'
+import type { SearchFilterType, SearchTimeFilter } from '@/types/search'
 import {
   formatDisplayDate,
   getCalendarDays,
@@ -75,6 +75,14 @@ export function useSearchFilter(props: SearchFilterProps, emit: SearchFilterEmit
       : [...draft.types, type]
   }
 
+  const selectTime = (time: SearchTimeFilter) => {
+    draft.time = time
+    if (time !== 'custom') {
+      draft.customTime = ''
+    }
+    dropdowns.isTimeOpen.value = false
+  }
+
   const typeDotClass = (value: SearchFilterType) => {
     const isActive = draft.types.includes(value)
 
@@ -140,6 +148,8 @@ export function useSearchFilter(props: SearchFilterProps, emit: SearchFilterEmit
     draft.location = ''
     draft.types = []
     draft.date = ''
+    draft.time = ''
+    draft.customTime = ''
     draft.categories = []
     categoryQuery.value = ''
     dropdowns.closeAll()
@@ -165,6 +175,7 @@ export function useSearchFilter(props: SearchFilterProps, emit: SearchFilterEmit
     resetFilters,
     selectDate,
     selectLocation,
+    selectTime,
     toggleCategory,
     toggleTypeFilter,
     typeDotClass,

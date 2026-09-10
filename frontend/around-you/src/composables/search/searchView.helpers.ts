@@ -20,12 +20,20 @@ export const getInitialSearchTypes = (routeType: unknown): SearchFilters['types'
   // unknown query values instead of letting them leak into filters.
   const type = Array.isArray(routeType) ? routeType[0] : routeType
 
-  return type === 'event' || type === 'attraction' ? [type] : []
+  if (type === 'event') return ['event']
+  if (type === 'attraction') return ['activity']
+
+  return []
 }
 
 export const hasActiveSearchFilters = (filters: SearchFilters) => {
   return Boolean(
-    filters.location.trim() || filters.types.length || filters.date || filters.categories.length,
+    filters.location.trim() ||
+      filters.types.length ||
+      filters.date ||
+      filters.time ||
+      filters.customTime ||
+      filters.categories.length,
   )
 }
 

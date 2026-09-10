@@ -7,6 +7,8 @@ const baseFilters: SearchFilters = {
   location: '',
   types: [],
   date: '',
+  time: '',
+  customTime: '',
   categories: [],
 }
 
@@ -31,8 +33,9 @@ describe('SearchFilter', () => {
 
     expect(wrapper.find('input[placeholder="Lokation"]').exists()).toBe(true)
     expect(wrapper.find('input[placeholder="Kategorier"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Event / Attraktion')
+    expect(wrapper.text()).toContain('Typer')
     expect(wrapper.text()).toContain('Dato')
+    expect(wrapper.text()).toContain('Tidspunkt')
 
     wrapper.unmount()
   })
@@ -56,9 +59,9 @@ describe('SearchFilter', () => {
 
     await wrapper
       .findAll('button')
-      .find((button) => button.text().includes('Event / Attraktion'))
+      .find((button) => button.text().includes('Typer'))
       ?.trigger('click')
-    await wrapper.findAll('button').find((button) => button.text() === 'Event')?.trigger('click')
+    await wrapper.findAll('button').find((button) => button.text() === 'Events')?.trigger('click')
 
     expect(lastEmittedModelValue(wrapper)).toMatchObject({
       types: ['event'],
@@ -83,6 +86,8 @@ describe('SearchFilter', () => {
       location: 'Ribe',
       types: ['event'],
       date: '2026-09-07',
+      time: 'custom',
+      customTime: '14:00',
       categories: ['culture'],
     })
 
@@ -92,6 +97,8 @@ describe('SearchFilter', () => {
       location: '',
       types: [],
       date: '',
+      time: '',
+      customTime: '',
       categories: [],
     })
 
