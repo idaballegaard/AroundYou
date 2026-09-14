@@ -2,16 +2,12 @@
   <div class="relative flex min-w-[140px] flex-1 items-center">
     <button
       type="button"
-      class="flex w-full items-center justify-between gap-2 rounded-full bg-transparent px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100/70"
+      class="flex w-full items-center justify-between gap-2 rounded-full bg-white/25 px-3 py-1.5 text-sm font-semibold text-slate-700 ring-1 ring-[#094b7b]/10 transition hover:bg-white/55 hover:ring-[#094b7b]/25"
       @click="emit('toggle')"
     >
       <span class="min-w-[40px]">Dato</span>
-      <div class="flex items-center gap-2">
-        <span class="text-sm text-slate-600">
-          {{ displayDate }}
-        </span>
-        <span class="text-xs text-slate-600">{{ isOpen ? '▲' : '▼' }}</span>
-      </div>
+      <span class="min-w-0 flex-1 truncate text-right text-sm text-slate-600">{{ displayDate }}</span>
+      <span class="text-xs text-slate-600">{{ isOpen ? '▲' : '▼' }}</span>
     </button>
 
     <div

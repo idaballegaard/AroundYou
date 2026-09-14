@@ -1,7 +1,7 @@
 <template>
   <div class="relative flex min-w-[180px] flex-1 items-center">
     <div
-      class="flex w-full items-center justify-between rounded-full bg-transparent px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100/70"
+      class="flex w-full items-center justify-between rounded-full bg-white/25 px-3 py-1.5 text-sm font-semibold text-slate-700 ring-1 ring-[#094b7b]/10 transition hover:bg-white/55 hover:ring-[#094b7b]/25"
       @click="emit('toggle')"
     >
       <input
