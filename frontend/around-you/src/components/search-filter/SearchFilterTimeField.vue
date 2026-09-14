@@ -27,12 +27,27 @@
 
       <label v-if="time === 'custom'" class="mt-2 block border-t border-slate-100 px-3 pt-3 text-xs font-semibold text-slate-600">
         Vælg klokkeslæt
-        <input
-          :value="customTime"
-          type="time"
-          class="mt-1 block w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm text-slate-700"
-          @input="emit('update:custom-time', ($event.target as HTMLInputElement).value)"
-        />
+        <div class="mt-1 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+          <select
+            :value="selectedHour"
+            aria-label="Time"
+            class="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700"
+            @change="updateTimePart('hour', $event)"
+          >
+            <option value="">Time</option>
+            <option v-for="hour in hours" :key="hour" :value="hour">{{ hour }}</option>
+          </select>
+          <span aria-hidden="true">:</span>
+          <select
+            :value="selectedMinute"
+            aria-label="Minutter"
+            class="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700"
+            @change="updateTimePart('minute', $event)"
+          >
+            <option value="">Min.</option>
+            <option v-for="minute in minutes" :key="minute" :value="minute">{{ minute }}</option>
+          </select>
+        </div>
       </label>
     </div>
   </div>
@@ -60,8 +75,25 @@ const options: Array<{ label: string; value: SearchTimeFilter }> = [
   { label: 'Senere i dag', value: 'later-today' },
   { label: 'Vælg tidspunkt', value: 'custom' },
 ]
+const hours = Array.from({ length: 24 }, (_, hour) => String(hour).padStart(2, '0'))
+const minutes = Array.from({ length: 12 }, (_, index) => String(index * 5).padStart(2, '0'))
 
-const displayValue = computed(
-  () => options.find((option) => option.value === props.time)?.label ?? '',
-)
+const selectedHour = computed(() => props.customTime.split(':')[0] ?? '')
+const selectedMinute = computed(() => props.customTime.split(':')[1] ?? '')
+
+const displayValue = computed(() => {
+  if (props.time === 'custom') {
+    return props.customTime || 'Vælg tidspunkt'
+  }
+
+  return options.find((option) => option.value === props.time)?.label ?? ''
+})
+
+const updateTimePart = (part: 'hour' | 'minute', event: Event) => {
+  const value = (event.target as HTMLSelectElement).value
+  const hour = part === 'hour' ? value : selectedHour.value || '00'
+  const minute = part === 'minute' ? value : selectedMinute.value || '00'
+
+  emit('update:custom-time', hour && minute ? `${hour}:${minute}` : '')
+}
 </script>

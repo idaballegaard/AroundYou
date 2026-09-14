@@ -18,6 +18,14 @@ import {
   type SelectedSearchMapMarker,
 } from './searchView.helpers'
 
+const getTodayDate = () => {
+  const today = new Date()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+
+  return `${today.getFullYear()}-${month}-${day}`
+}
+
 export const useSearchView = () => {
   // Coordinates search result filtering, pagination, and map selection for the
   // SearchView without putting routing/map details in the component.
@@ -25,7 +33,7 @@ export const useSearchView = () => {
   const filters = ref<SearchFilters>({
     location: '',
     types: getInitialSearchTypes(route.query.type),
-    date: '',
+    date: getTodayDate(),
     time: '',
     customTime: '',
     categories: [],

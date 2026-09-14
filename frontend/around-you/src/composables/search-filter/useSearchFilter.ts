@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import type { SearchFilterType, SearchTimeFilter } from '@/types/search'
+import type { SearchTimeFilter } from '@/types/search'
 import {
   formatDisplayDate,
   getCalendarDays,
@@ -21,6 +21,15 @@ export function useSearchFilter(props: SearchFilterProps, emit: SearchFilterEmit
   const today = new Date()
   const currentMonth = ref(today.getMonth())
   const currentYear = ref(today.getFullYear())
+  const todayDateValue = toDateInputValue(today.getFullYear(), today.getMonth(), today.getDate())
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const tomorrowDateValue = toDateInputValue(
+    tomorrow.getFullYear(),
+    tomorrow.getMonth(),
+    tomorrow.getDate(),
+  )
+  const isDateCalendarOpen = ref(false)
   const locationOptionValues = computed(() => props.locationOptions ?? [])
   const categoryOptionValues = computed(() => props.categoryOptions ?? [])
   const draft = useSearchFilterDraft(props, emit)
@@ -69,27 +78,12 @@ export function useSearchFilter(props: SearchFilterProps, emit: SearchFilterEmit
     dropdowns.isCategoriesOpen.value = false
   }
 
-  const toggleTypeFilter = (type: SearchFilterType) => {
-    draft.types = draft.types.includes(type)
-      ? draft.types.filter((item) => item !== type)
-      : [...draft.types, type]
-  }
-
   const selectTime = (time: SearchTimeFilter) => {
     draft.time = time
     if (time !== 'custom') {
       draft.customTime = ''
+      dropdowns.isTimeOpen.value = false
     }
-    dropdowns.isTimeOpen.value = false
-  }
-
-  const typeDotClass = (value: SearchFilterType) => {
-    const isActive = draft.types.includes(value)
-
-    return [
-      'h-3 w-3 rounded-sm border border-slate-400',
-      isActive ? 'bg-slate-700' : 'bg-white',
-    ].join(' ')
   }
 
   const monthLabel = computed(() => {
@@ -102,7 +96,12 @@ export function useSearchFilter(props: SearchFilterProps, emit: SearchFilterEmit
   })
 
   const calendarDays = computed(() => getCalendarDays(currentYear.value, currentMonth.value))
-  const displayDate = computed(() => formatDisplayDate(draft.date))
+  const displayDate = computed(() => {
+    if (draft.date === todayDateValue) return 'I dag'
+    if (draft.date === tomorrowDateValue) return 'I morgen'
+
+    return formatDisplayDate(draft.date)
+  })
   const isSelectedDay = (day: number) =>
     isSelectedCalendarDay(draft.date, currentYear.value, currentMonth.value, day)
 
@@ -121,7 +120,29 @@ export function useSearchFilter(props: SearchFilterProps, emit: SearchFilterEmit
     // Store dates in input-compatible yyyy-mm-dd form; display formatting is a
     // separate computed value.
     draft.date = toDateInputValue(currentYear.value, currentMonth.value, day)
+    isDateCalendarOpen.value = false
     dropdowns.isDateOpen.value = false
+  }
+
+  const selectRelativeDate = (daysFromToday: number) => {
+    const selectedDate = new Date()
+    selectedDate.setDate(selectedDate.getDate() + daysFromToday)
+    draft.date = toDateInputValue(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth(),
+      selectedDate.getDate(),
+    )
+    isDateCalendarOpen.value = false
+    dropdowns.isDateOpen.value = false
+  }
+
+  const openDateCalendar = () => {
+    isDateCalendarOpen.value = true
+  }
+
+  const toggleDate = () => {
+    dropdowns.toggleDate()
+    isDateCalendarOpen.value = false
   }
 
   const goToPreviousMonth = () => {
@@ -147,7 +168,7 @@ export function useSearchFilter(props: SearchFilterProps, emit: SearchFilterEmit
   const resetFilters = () => {
     draft.location = ''
     draft.types = []
-    draft.date = ''
+    draft.date = todayDateValue
     draft.time = ''
     draft.customTime = ''
     draft.categories = []
@@ -160,9 +181,6 @@ export function useSearchFilter(props: SearchFilterProps, emit: SearchFilterEmit
     addCategoryFromQuery,
     calendarDays,
     categoryQuery,
-    clearTypeFilters: () => {
-      draft.types = []
-    },
     dayButtonClass,
     displayDate,
     draft,
@@ -170,15 +188,17 @@ export function useSearchFilter(props: SearchFilterProps, emit: SearchFilterEmit
     filteredLocationOptions,
     goToNextMonth,
     goToPreviousMonth,
+    isDateCalendarOpen,
     monthLabel,
+    openDateCalendar,
     removeCategory,
     resetFilters,
     selectDate,
     selectLocation,
+    selectRelativeDate,
     selectTime,
     toggleCategory,
-    toggleTypeFilter,
-    typeDotClass,
+    toggleDate,
     weekdayLabels,
   }
 }

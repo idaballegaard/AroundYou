@@ -34,10 +34,15 @@
           :display-date="displayDate"
           :is-open="isDateOpen"
           :month-label="monthLabel"
+          :selected-date="draft.date"
+          :show-calendar="isDateCalendarOpen"
           :weekday-labels="weekdayLabels"
           @next-month="goToNextMonth"
+          @open-calendar="openDateCalendar"
           @previous-month="goToPreviousMonth"
           @select-date="selectDate"
+          @select-today="selectRelativeDate(0)"
+          @select-tomorrow="selectRelativeDate(1)"
           @toggle="toggleDate"
         />
 
@@ -50,16 +55,6 @@
           @select="selectTime"
           @toggle="toggleTime"
           @update:custom-time="draft.customTime = $event"
-        />
-
-        <div class="hidden h-6 w-px bg-slate-300/70 lg:block" />
-
-        <SearchFilterTypeField
-          :is-open="isTypeOpen"
-          :type-dot-class="typeDotClass"
-          @clear="clearTypeFilters"
-          @toggle="toggleType"
-          @toggle-type="toggleTypeFilter"
         />
 
         <div class="hidden h-6 w-px bg-slate-300/70 lg:block" />
@@ -94,7 +89,6 @@ import SearchFilterCategoryField from '@/components/search-filter/SearchFilterCa
 import SearchFilterDateField from '@/components/search-filter/SearchFilterDateField.vue'
 import SearchFilterLocationField from '@/components/search-filter/SearchFilterLocationField.vue'
 import SearchFilterTimeField from '@/components/search-filter/SearchFilterTimeField.vue'
-import SearchFilterTypeField from '@/components/search-filter/SearchFilterTypeField.vue'
 import { useSearchFilter } from '@/composables/search-filter/useSearchFilter'
 import type { SearchFilters } from '@/types/search'
 
@@ -117,7 +111,6 @@ const {
   addCategoryFromQuery,
   calendarDays,
   categoryQuery,
-  clearTypeFilters,
   dayButtonClass,
   displayDate,
   draft,
@@ -128,25 +121,24 @@ const {
   goToPreviousMonth,
   isCategoriesOpen,
   isDateOpen,
+  isDateCalendarOpen,
   isLocationOpen,
   isTimeOpen,
-  isTypeOpen,
   monthLabel,
   openCategories,
+  openDateCalendar,
   openLocation,
   removeCategory,
   resetFilters,
   selectDate,
   selectLocation,
+  selectRelativeDate,
   selectTime,
   toggleCategories,
   toggleCategory,
   toggleDate,
   toggleLocation,
   toggleTime,
-  toggleType,
-  toggleTypeFilter,
-  typeDotClass,
   weekdayLabels,
 } = useSearchFilter(props, emit)
 

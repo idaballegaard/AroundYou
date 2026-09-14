@@ -33,7 +33,7 @@ describe('SearchFilter', () => {
 
     expect(wrapper.find('input[placeholder="Lokation"]').exists()).toBe(true)
     expect(wrapper.find('input[placeholder="Kategorier"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Typer')
+    expect(wrapper.text()).not.toContain('Typer')
     expect(wrapper.text()).toContain('Dato')
     expect(wrapper.text()).toContain('Tidspunkt')
 
@@ -54,18 +54,8 @@ describe('SearchFilter', () => {
     wrapper.unmount()
   })
 
-  it('toggles type and category filters without duplicating custom categories', async () => {
+  it('adds custom category filters without duplicates', async () => {
     const wrapper = mountFilter()
-
-    await wrapper
-      .findAll('button')
-      .find((button) => button.text().includes('Typer'))
-      ?.trigger('click')
-    await wrapper.findAll('button').find((button) => button.text() === 'Events')?.trigger('click')
-
-    expect(lastEmittedModelValue(wrapper)).toMatchObject({
-      types: ['event'],
-    })
 
     const categoryInput = wrapper.find('input[placeholder="Kategorier"]')
     await categoryInput.trigger('focus')
@@ -93,14 +83,73 @@ describe('SearchFilter', () => {
 
     await wrapper.findAll('button').find((button) => button.text() === 'Nulstil filtre')?.trigger('click')
 
-    expect(lastEmittedModelValue(wrapper)).toEqual({
+    expect(lastEmittedModelValue(wrapper)).toMatchObject({
       location: '',
       types: [],
-      date: '',
+      date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       time: '',
       customTime: '',
       categories: [],
     })
+
+    wrapper.unmount()
+  })
+
+  it('shows quick date choices before opening the calendar', async () => {
+    const wrapper = mountFilter()
+
+    await wrapper.findAll('button').find((button) => button.text().includes('Dato'))?.trigger('click')
+
+    expect(wrapper.text()).toContain('I dag')
+    expect(wrapper.text()).toContain('I morgen')
+    expect(wrapper.text()).toContain('Vælg dato')
+    expect(wrapper.text()).not.toContain(new Date().toLocaleDateString('da-DK', { month: 'long' }))
+
+    await wrapper.findAll('button').find((button) => button.text() === 'Vælg dato')?.trigger('click')
+
+    expect(wrapper.text()).toContain(new Date().toLocaleDateString('da-DK', { month: 'long' }))
+
+    wrapper.unmount()
+  })
+
+  it('uses friendly labels for today and tomorrow in the date field', async () => {
+    const today = new Date()
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    const toDateValue = (date: Date) => {
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${date.getFullYear()}-${month}-${day}`
+    }
+
+    const wrapper = mountFilter({ ...baseFilters, date: toDateValue(today) })
+    expect(wrapper.text()).toContain('I dag')
+
+    await wrapper.setProps({ modelValue: { ...baseFilters, date: toDateValue(tomorrow) } })
+    expect(wrapper.text()).toContain('I morgen')
+
+    wrapper.unmount()
+  })
+
+  it('keeps the time menu open when selecting a custom time', async () => {
+    const wrapper = mountFilter()
+
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Tidspunkt'))
+      ?.trigger('click')
+    await wrapper.findAll('button').find((button) => button.text() === 'Vælg tidspunkt')?.trigger('click')
+
+    expect(wrapper.find('select[aria-label="Time"]').exists()).toBe(true)
+    const minuteOptions = wrapper
+      .findAll('select[aria-label="Minutter"] option')
+      .map((option) => option.attributes('value'))
+    expect(minuteOptions).toContain('55')
+    expect(minuteOptions).not.toContain('01')
+
+    await wrapper.find('select[aria-label="Time"]').setValue('14')
+    await wrapper.find('select[aria-label="Minutter"]').setValue('30')
+    expect(wrapper.text()).toContain('14:30')
 
     wrapper.unmount()
   })
