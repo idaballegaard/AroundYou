@@ -39,7 +39,8 @@
         :config="activeCollection"
       />
       <AdminContactTickets v-else-if="activeTab === 'contact'" />
-      <AdminReviewReports v-else />
+      <AdminReviewReports v-else-if="activeTab === 'reviews'" />
+      <AdminCrawlerCandidates v-else />
     </section>
   </main>
 </template>
@@ -47,6 +48,7 @@
 <script setup lang="ts">
 import AdminCollectionManager from '@/components/admin/AdminCollectionManager.vue'
 import AdminContactTickets from '@/components/admin/AdminContactTickets.vue'
+import AdminCrawlerCandidates from '@/components/admin/AdminCrawlerCandidates.vue'
 import AdminReviewReports from '@/components/admin/AdminReviewReports.vue'
 import { useAdminView } from '@/composables/admin/useAdminView'
 

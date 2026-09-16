@@ -1,6 +1,6 @@
 import type { AdminCollectionConfig, AdminCollectionKey } from '@/types/admin'
 
-export type AdminTabKey = AdminCollectionKey | 'reviews' | 'contact'
+export type AdminTabKey = AdminCollectionKey | 'reviews' | 'contact' | 'crawler'
 
 export type AdminTab = {
   key: AdminTabKey
@@ -15,6 +15,7 @@ export function getAdminTabs(collections: AdminCollectionConfig[]): AdminTab[] {
     })),
     { key: 'contact', label: 'Henvendelser' },
     { key: 'reviews', label: 'Anmeldelsesrapporter' },
+    { key: 'crawler', label: 'Eventcrawler' },
   ]
 }
 

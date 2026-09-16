@@ -2,6 +2,7 @@ import { load } from "cheerio";
 import { Configuration, HttpCrawler } from "crawlee";
 
 const OPLEV_ESBJERG_EVENT_CALENDAR_URL = "https://oplev.esbjerg.dk/eventkalender";
+export const OPLEV_ESBJERG_EVENT_SOURCE = "Oplev Esbjerg eventkalender";
 const KULTUNAUT_EVENT_FEED_URL =
   "https://www.kultunaut.dk/perl/nautjs/type-esbjerglive4?mm=1&tmplid=arrlist&callback=aroundYouCallback";
 const MAX_EVENTS_PER_CRAWL = 12;
@@ -129,7 +130,7 @@ export async function crawlOplevEsbjergEvents(
   }
 
   return {
-    source: "Oplev Esbjerg eventkalender",
+    source: OPLEV_ESBJERG_EVENT_SOURCE,
     sourceUrl: OPLEV_ESBJERG_EVENT_CALENDAR_URL,
     crawledAt: new Date().toISOString(),
     events: parseOplevEsbjergEvents(eventHtml).slice(0, Math.min(Math.max(limit, 1), MAX_EVENTS_PER_CRAWL)),

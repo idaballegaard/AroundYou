@@ -1,10 +1,25 @@
 import { CrawledEventCandidateModel } from "../models/crawledEventCandidateModel";
-import { OplevEsbjergEventCandidate } from "./oplevEsbjergEventCrawler.service";
+import {
+  OPLEV_ESBJERG_EVENT_SOURCE,
+  OplevEsbjergEventCandidate,
+} from "./oplevEsbjergEventCrawler.service";
 
 export type CrawledEventCandidatePersistence = {
   inserted: number;
   updated: number;
 };
+
+export async function getNewOplevEsbjergEventCandidates() {
+  // Only expose the raw, unreviewed import queue for now. A moderation flow
+  // will later handle the approved and rejected statuses.
+  return CrawledEventCandidateModel.find({
+    source: OPLEV_ESBJERG_EVENT_SOURCE,
+    status: "new",
+  })
+    .sort({ crawledAt: -1, createdAt: -1 })
+    .limit(50)
+    .lean();
+}
 
 export async function saveCrawledEventCandidates(
   source: string,

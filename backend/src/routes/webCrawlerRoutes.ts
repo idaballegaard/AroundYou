@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   crawlOplevEsbjergEventCalendar,
+  getOplevEsbjergEventCandidates,
   crawlWebsite,
 } from "../controllers/webCrawlerController";
 import { adminMutationRateLimiter } from "../middleware/rateLimit";
@@ -20,6 +21,14 @@ router.post(
   requirePermission("admin:access"),
   adminMutationRateLimiter,
   crawlOplevEsbjergEventCalendar,
+);
+
+router.get(
+  "/admin/crawler/oplev-esbjerg/events",
+  verifyToken,
+  requireAdmin,
+  requirePermission("admin:access"),
+  getOplevEsbjergEventCandidates,
 );
 
 router.post(

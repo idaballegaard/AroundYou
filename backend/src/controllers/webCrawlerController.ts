@@ -4,7 +4,10 @@ import {
   crawlOplevEsbjergEvents,
   OplevEsbjergEventCrawlerError,
 } from "../services/oplevEsbjergEventCrawler.service";
-import { saveCrawledEventCandidates } from "../services/crawledEventCandidate.service";
+import {
+  getNewOplevEsbjergEventCandidates,
+  saveCrawledEventCandidates,
+} from "../services/crawledEventCandidate.service";
 
 function parseLimit(value: unknown): number | undefined {
   if (typeof value !== "string" || !value.trim()) {
@@ -51,5 +54,17 @@ export async function crawlOplevEsbjergEventCalendar(
 
     console.error("Oplev Esbjerg event crawl failed:", error);
     res.status(502).json({ message: "Eventkalenderen kunne ikke crawles." });
+  }
+}
+
+export async function getOplevEsbjergEventCandidates(
+  _req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    res.status(200).json(await getNewOplevEsbjergEventCandidates());
+  } catch (error) {
+    console.error("Could not fetch crawled event candidates:", error);
+    res.status(500).json({ message: "Eventkandidaterne kunne ikke hentes." });
   }
 }
