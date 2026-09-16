@@ -10,6 +10,7 @@ import geocodingRoutes from "./geocodingRoutes";
 import notificationRoutes from "./notificationRoutes";
 import reviewRoutes from "./reviewRoutes";
 import uploadRoutes from "./uploadRoutes";
+import webCrawlerRoutes from "./webCrawlerRoutes";
 
 const router: Router = Router();
 
@@ -25,6 +26,7 @@ router.use(contentSuggestionRoutes);
 router.use(contactTicketRoutes);
 router.use(notificationRoutes);
 router.use(adminRoutes);
+router.use(webCrawlerRoutes);
 router.use(authRoutes);
 router.use(attractionRoutes);
 router.use(eventRoutes);
