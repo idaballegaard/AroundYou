@@ -4,6 +4,7 @@ import {
   crawlOplevEsbjergEvents,
   OplevEsbjergEventCrawlerError,
 } from "../services/oplevEsbjergEventCrawler.service";
+import { saveCrawledEventCandidates } from "../services/crawledEventCandidate.service";
 
 function parseLimit(value: unknown): number | undefined {
   if (typeof value !== "string" || !value.trim()) {
@@ -34,7 +35,14 @@ export async function crawlOplevEsbjergEventCalendar(
   res: Response,
 ): Promise<void> {
   try {
-    res.status(200).json(await crawlOplevEsbjergEvents(parseLimit(req.query.limit)));
+    const crawl = await crawlOplevEsbjergEvents(parseLimit(req.query.limit));
+    const persistence = await saveCrawledEventCandidates(
+      crawl.source,
+      crawl.events,
+      crawl.crawledAt,
+    );
+
+    res.status(200).json({ ...crawl, persistence });
   } catch (error) {
     if (error instanceof OplevEsbjergEventCrawlerError) {
       res.status(502).json({ message: error.message });

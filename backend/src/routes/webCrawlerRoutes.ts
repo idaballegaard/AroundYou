@@ -11,7 +11,8 @@ import { verifyToken } from "../middleware/verifyUserToken";
 const router = Router();
 
 // These endpoints are intentionally admin-only while the crawler is still a
-// foundation feature. They do not store or publish crawled content.
+// foundation feature. The source-specific endpoint stores raw candidates only;
+// it never publishes crawled content as an AroundYou event.
 router.post(
   "/admin/crawler/oplev-esbjerg/events",
   verifyToken,

@@ -1,0 +1,22 @@
+import { Document } from "mongoose";
+
+export type CrawledEventCandidateStatus = "new" | "approved" | "rejected";
+
+// This is deliberately a raw import record, not an Event. A later moderation
+// flow can decide which candidates are complete and trustworthy enough to
+// publish as real AroundYou events.
+export interface CrawledEventCandidate extends Document {
+  source: string;
+  sourceId: string;
+  sourceUrl: string;
+  title: string;
+  description: string;
+  dateText: string;
+  locationText: string;
+  category: string;
+  imageUrl: string;
+  status: CrawledEventCandidateStatus;
+  crawledAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
