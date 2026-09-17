@@ -5,9 +5,14 @@ import {
   OplevEsbjergEventCrawlerError,
 } from "../services/oplevEsbjergEventCrawler.service";
 import {
-  getNewOplevEsbjergEventCandidates,
+  approveCrawledEventCandidate,
+  CrawledEventCandidateReviewError,
+  getOplevEsbjergEventCandidates as findOplevEsbjergEventCandidates,
+  rejectCrawledEventCandidate,
   saveCrawledEventCandidates,
 } from "../services/crawledEventCandidate.service";
+import { getRouteParam, isValidationError } from "./controllerUtils";
+import { CrawledEventCandidateStatus } from "../interfaces/crawledEventCandidate";
 
 function parseLimit(value: unknown): number | undefined {
   if (typeof value !== "string" || !value.trim()) {
@@ -16,6 +21,10 @@ function parseLimit(value: unknown): number | undefined {
 
   const limit = Number(value);
   return Number.isInteger(limit) ? limit : undefined;
+}
+
+function parseCandidateStatus(value: unknown): CrawledEventCandidateStatus {
+  return value === "approved" || value === "rejected" ? value : "new";
 }
 
 export async function crawlWebsite(req: Request, res: Response): Promise<void> {
@@ -58,13 +67,77 @@ export async function crawlOplevEsbjergEventCalendar(
 }
 
 export async function getOplevEsbjergEventCandidates(
-  _req: Request,
+  req: Request,
   res: Response,
 ): Promise<void> {
   try {
-    res.status(200).json(await getNewOplevEsbjergEventCandidates());
+    res
+      .status(200)
+      .json(await findOplevEsbjergEventCandidates(parseCandidateStatus(req.query.status)));
   } catch (error) {
     console.error("Could not fetch crawled event candidates:", error);
     res.status(500).json({ message: "Eventkandidaterne kunne ikke hentes." });
+  }
+}
+
+export async function approveOplevEsbjergEventCandidate(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const event = await approveCrawledEventCandidate(
+      getRouteParam(req.params.id),
+      req.body as Record<string, unknown>,
+      req.user?.userID,
+    );
+
+    if (!event) {
+      res.status(404).json({ message: "Eventkandidaten blev ikke fundet." });
+      return;
+    }
+
+    res.status(201).json(event);
+  } catch (error) {
+    if (isValidationError(error)) {
+      res.status(400).json({ message: error.message });
+      return;
+    }
+
+    if (error instanceof CrawledEventCandidateReviewError) {
+      res.status(409).json({ message: error.message });
+      return;
+    }
+
+    console.error("Could not approve crawled event candidate:", error);
+    res.status(500).json({ message: "Eventkandidaten kunne ikke godkendes." });
+  }
+}
+
+export async function rejectOplevEsbjergEventCandidate(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const reason = typeof req.body?.reason === "string" ? req.body.reason : "";
+    const candidate = await rejectCrawledEventCandidate(
+      getRouteParam(req.params.id),
+      req.user?.userID,
+      reason,
+    );
+
+    if (!candidate) {
+      res.status(404).json({ message: "Eventkandidaten blev ikke fundet." });
+      return;
+    }
+
+    res.status(200).json(candidate);
+  } catch (error) {
+    if (error instanceof CrawledEventCandidateReviewError) {
+      res.status(409).json({ message: error.message });
+      return;
+    }
+
+    console.error("Could not reject crawled event candidate:", error);
+    res.status(500).json({ message: "Eventkandidaten kunne ikke afvises." });
   }
 }

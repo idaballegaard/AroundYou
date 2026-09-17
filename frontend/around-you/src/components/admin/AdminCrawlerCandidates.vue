@@ -15,6 +15,7 @@
           Opdater liste
         </button>
         <button
+          v-if="activeStatus === 'new'"
           class="rounded-md bg-[#094b7b] px-3 py-2 text-sm font-black text-white hover:bg-[#073d65] disabled:cursor-not-allowed disabled:opacity-60"
           :disabled="isCrawling"
           @click="runCrawler"
@@ -22,6 +23,19 @@
           {{ isCrawling ? 'Henter events...' : 'Hent events fra Oplev Esbjerg' }}
         </button>
       </div>
+    </div>
+
+    <div class="mt-4 flex gap-2 overflow-x-auto border-b border-slate-200">
+      <button
+        v-for="tab in statusTabs"
+        :key="tab.status"
+        type="button"
+        class="shrink-0 border-b-2 px-3 py-2 text-sm font-black transition"
+        :class="activeStatus === tab.status ? 'border-[#094b7b] text-[#094b7b]' : 'border-transparent text-slate-500 hover:text-slate-800'"
+        @click="setActiveStatus(tab.status)"
+      >
+        {{ tab.label }}
+      </button>
     </div>
 
     <p v-if="errorMessage" class="mt-4 rounded-md bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700">
@@ -35,7 +49,7 @@
       Henter eventkandidater...
     </div>
     <div v-else-if="!candidates.length" class="mt-4 rounded-md bg-slate-50 p-4 text-sm font-semibold text-slate-600">
-      Der er endnu ingen nye eventkandidater. Hent events for at starte den første import.
+      {{ activeStatus === 'new' ? 'Der er ingen nye eventkandidater. Hent events for at starte en import.' : `Der er ingen ${activeStatus === 'approved' ? 'godkendte' : 'afviste'} eventkandidater.` }}
     </div>
     <div v-else class="mt-4 grid gap-3">
       <article v-for="candidate in candidates" :key="candidate._id" class="rounded-lg border border-slate-200 p-3 sm:p-4">
@@ -47,16 +61,44 @@
             </div>
             <p v-if="candidate.description" class="mt-2 text-sm text-slate-700">{{ candidate.description }}</p>
             <p class="mt-2 text-sm text-slate-500">{{ candidate.dateText }}<span v-if="candidate.locationText"> · {{ candidate.locationText }}</span></p>
+            <p v-if="candidate.reviewedAt" class="mt-2 text-xs font-semibold text-slate-500">
+              Behandlet {{ new Date(candidate.reviewedAt).toLocaleString('da-DK') }}
+              <span v-if="candidate.rejectionReason"> · {{ candidate.rejectionReason }}</span>
+            </p>
           </div>
-          <a
-            :href="candidate.sourceUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="shrink-0 text-sm font-bold text-[#094b7b] underline underline-offset-2"
-          >
-            Se kilde
-          </a>
+          <div class="flex shrink-0 flex-wrap gap-2">
+            <a :href="candidate.sourceUrl" target="_blank" rel="noopener noreferrer" class="text-sm font-bold text-[#094b7b] underline underline-offset-2">Se kilde</a>
+            <template v-if="activeStatus === 'new'">
+              <button type="button" class="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-black text-white disabled:opacity-60" :disabled="Boolean(activeCandidateId)" @click="openApproval(candidate)">Godkend</button>
+              <button type="button" class="rounded-md bg-rose-600 px-3 py-1.5 text-sm font-black text-white disabled:opacity-60" :disabled="Boolean(activeCandidateId)" @click="rejectCandidate(candidate._id)">Afvis</button>
+            </template>
+          </div>
         </div>
+        <form
+          v-if="activeStatus === 'new' && approvalCandidate?._id === candidate._id && approvalForm"
+          class="mt-4 grid gap-3 border-t border-slate-200 pt-4 sm:grid-cols-2"
+          @submit.prevent="approveCandidate"
+        >
+          <div class="sm:col-span-2">
+            <h4 class="font-black text-[#094b7b]">Godkend event</h4>
+            <p class="mt-1 text-sm text-slate-600">Kildens tidspunkt: {{ candidate.dateText || 'Ikke oplyst' }}</p>
+          </div>
+          <label class="grid gap-1 text-sm font-bold text-slate-700">Navn<input v-model.trim="approvalForm.name" required class="rounded-md border border-slate-300 px-3 py-2 font-normal" /></label>
+          <label class="grid gap-1 text-sm font-bold text-slate-700">Pris i kr.<input v-model.number="approvalForm.price" required min="0" step="1" type="number" class="rounded-md border border-slate-300 px-3 py-2 font-normal" /></label>
+          <label class="grid gap-1 text-sm font-bold text-slate-700 sm:col-span-2">Beskrivelse<textarea v-model.trim="approvalForm.description" required rows="3" class="rounded-md border border-slate-300 px-3 py-2 font-normal" /></label>
+          <label class="grid gap-1 text-sm font-bold text-slate-700 sm:col-span-2">Billedlink<input v-model.trim="approvalForm.heroImage" required type="url" class="rounded-md border border-slate-300 px-3 py-2 font-normal" /></label>
+          <label class="grid gap-1 text-sm font-bold text-slate-700 sm:col-span-2">Kildelink<input v-model.trim="approvalForm.link" required type="url" class="rounded-md border border-slate-300 px-3 py-2 font-normal" /></label>
+          <label class="grid gap-1 text-sm font-bold text-slate-700">Starttidspunkt<input v-model="approvalForm.startDate" required type="datetime-local" class="rounded-md border border-slate-300 px-3 py-2 font-normal" /><span v-if="!approvalForm.startDate" class="text-xs font-normal text-amber-700">Starttidspunktet er ikke oplyst af kilden.</span></label>
+          <label class="grid gap-1 text-sm font-bold text-slate-700">Sluttidspunkt <span class="font-normal">(valgfrit)</span><input v-model="approvalForm.endDate" type="datetime-local" class="rounded-md border border-slate-300 px-3 py-2 font-normal" /><span v-if="!approvalForm.endDate" class="text-xs font-normal text-slate-500">Kilden angiver ikke et sluttidspunkt.</span></label>
+          <label class="grid gap-1 text-sm font-bold text-slate-700">Adresse<input v-model.trim="approvalForm.address" class="rounded-md border border-slate-300 px-3 py-2 font-normal" /></label>
+          <label class="grid gap-1 text-sm font-bold text-slate-700">By<input v-model.trim="approvalForm.city" class="rounded-md border border-slate-300 px-3 py-2 font-normal" /></label>
+          <label class="grid gap-1 text-sm font-bold text-slate-700 sm:col-span-2">GPS-koordinater <span class="font-normal">(findes automatisk ud fra stedet, når det er muligt)</span><input v-model.trim="approvalForm.gpsPosition" :placeholder="isGeocoding ? 'Finder GPS-koordinater...' : '55.4765,8.4594'" class="rounded-md border border-slate-300 px-3 py-2 font-normal" /><span v-if="isGeocoding" class="text-xs font-normal text-slate-500">Slår stedet op i OpenStreetMap...</span><span v-else-if="!approvalForm.gpsPosition" class="text-xs font-normal text-slate-500">Kun hvis stedet ikke kan findes automatisk, skal du angive GPS eller rette stedfeltet.</span></label>
+          <label class="flex items-center gap-2 text-sm font-bold text-slate-700 sm:col-span-2"><input v-model="approvalForm.isAnnual" type="checkbox" />Årligt event</label>
+          <div class="flex flex-wrap gap-2 sm:col-span-2">
+            <button class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-black text-white disabled:opacity-60" :disabled="activeCandidateId === candidate._id" type="submit">{{ activeCandidateId === candidate._id ? 'Godkender...' : 'Godkend og publicér' }}</button>
+            <button class="rounded-md border border-slate-300 px-3 py-2 text-sm font-bold text-slate-700" type="button" @click="closeApproval">Annuller</button>
+          </div>
+        </form>
       </article>
     </div>
   </section>
@@ -65,6 +107,29 @@
 <script setup lang="ts">
 import { useAdminCrawlerCandidates } from '@/composables/admin/useAdminCrawlerCandidates'
 
-const { candidates, errorMessage, isCrawling, isLoading, loadCandidates, runCrawler, successMessage } =
-  useAdminCrawlerCandidates()
+const {
+  activeCandidateId,
+  activeStatus,
+  approvalCandidate,
+  approvalForm,
+  approveCandidate,
+  candidates,
+  closeApproval,
+  errorMessage,
+  isCrawling,
+  isGeocoding,
+  isLoading,
+  loadCandidates,
+  openApproval,
+  rejectCandidate,
+  runCrawler,
+  setActiveStatus,
+  successMessage,
+} = useAdminCrawlerCandidates()
+
+const statusTabs = [
+  { status: 'new', label: 'Nye' },
+  { status: 'approved', label: 'Godkendte' },
+  { status: 'rejected', label: 'Afviste' },
+] as const
 </script>

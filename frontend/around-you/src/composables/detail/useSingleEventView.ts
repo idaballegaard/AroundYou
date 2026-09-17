@@ -46,7 +46,10 @@ export function useSingleEventView() {
   const displayEventName = computed(() => eventItem.value?.name ?? '')
   const heroImage = computed(() => eventItem.value?.heroImage ?? DEFAULT_EVENT_HERO_IMAGE)
   const gpsPosition = computed(() => eventItem.value?.gpsPosition)
-  const { address: eventAddress } = useReverseGeocodedAddress(gpsPosition)
+  const { address: reverseGeocodedAddress } = useReverseGeocodedAddress(gpsPosition)
+  const eventAddress = computed(
+    () => eventItem.value?.address?.trim() || reverseGeocodedAddress.value,
+  )
 
   const eventFacts = computed<DetailFact[]>(() => {
     if (!eventItem.value) return []

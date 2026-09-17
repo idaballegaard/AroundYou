@@ -7,6 +7,8 @@ export interface Event extends Document {
     price: number;
     link: string;
     gpsPosition: string;
+    address?: string;
+    city?: string;
     slugArray: string[];
     updateAt: Date;
     isAnnual: boolean;

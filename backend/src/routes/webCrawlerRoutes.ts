@@ -1,7 +1,9 @@
 import { Router } from "express";
 import {
+  approveOplevEsbjergEventCandidate,
   crawlOplevEsbjergEventCalendar,
   getOplevEsbjergEventCandidates,
+  rejectOplevEsbjergEventCandidate,
   crawlWebsite,
 } from "../controllers/webCrawlerController";
 import { adminMutationRateLimiter } from "../middleware/rateLimit";
@@ -29,6 +31,24 @@ router.get(
   requireAdmin,
   requirePermission("admin:access"),
   getOplevEsbjergEventCandidates,
+);
+
+router.post(
+  "/admin/crawler/oplev-esbjerg/events/:id/approve",
+  verifyToken,
+  requireAdmin,
+  requirePermission("admin:access"),
+  adminMutationRateLimiter,
+  approveOplevEsbjergEventCandidate,
+);
+
+router.post(
+  "/admin/crawler/oplev-esbjerg/events/:id/reject",
+  verifyToken,
+  requireAdmin,
+  requirePermission("admin:access"),
+  adminMutationRateLimiter,
+  rejectOplevEsbjergEventCandidate,
 );
 
 router.post(

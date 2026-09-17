@@ -1,15 +1,100 @@
 import { onMounted, ref } from 'vue'
 
+import { getGeocodedCoordinates } from '@/api/geocoding.api'
 import {
+  approveOplevEsbjergEventCandidate,
   crawlOplevEsbjergEvents,
-  fetchNewOplevEsbjergEventCandidates,
+  fetchOplevEsbjergEventCandidates,
+  rejectOplevEsbjergEventCandidate,
+  type CrawledEventApprovalPayload,
   type CrawledEventCandidate,
+  type CrawledEventCandidateStatus,
 } from '@/api/crawledEventCandidates.api'
+
+const danishMonths: Record<string, string> = {
+  januar: '01',
+  februar: '02',
+  marts: '03',
+  april: '04',
+  maj: '05',
+  juni: '06',
+  juli: '07',
+  august: '08',
+  september: '09',
+  oktober: '10',
+  november: '11',
+  december: '12',
+}
+
+// Older candidates were imported before date fields were stored. Read the
+// original source text as a fallback so their review form remains useful.
+function getStartDateFromSourceText(dateText: string): string {
+  const dateMatch = dateText.match(
+    /(?:d\.\s*)?(\d{1,2})\.\s*(januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)\s+(\d{4})/i,
+  )
+  const timeMatch = dateText.match(/kl\.\s*(\d{1,2})(?:[.:](\d{2}))?/i)
+
+  if (!dateMatch || !timeMatch) return ''
+
+  const day = dateMatch[1]
+  const monthName = dateMatch[2]
+  const year = dateMatch[3]
+  const hour = timeMatch[1]
+  const minute = timeMatch[2] ?? '00'
+
+  if (!day || !monthName || !year || !hour) return ''
+
+  const month = danishMonths[monthName.toLowerCase()]
+  if (!month) return ''
+
+  return `${year}-${month}-${day.padStart(2, '0')}T${hour.padStart(2, '0')}:${minute}`
+}
+
+async function geocodeCandidateAddress(address: string): Promise<{
+  latitude: number
+  longitude: number
+  displayName: string
+}> {
+  try {
+    return await getGeocodedCoordinates(null, address)
+  } catch {
+    // Source addresses may begin with the venue name. Retry the street/city
+    // portion so the GPS field can still be filled automatically.
+    const addressWithoutVenue = address.split(',').slice(1).join(',').trim()
+
+    if (!addressWithoutVenue) throw new Error('Address could not be geocoded')
+
+    return getGeocodedCoordinates(null, addressWithoutVenue)
+  }
+}
+
+function createApprovalForm(candidate: CrawledEventCandidate): CrawledEventApprovalPayload {
+  return {
+    name: candidate.title,
+    description: candidate.description,
+    heroImage: candidate.imageUrl,
+    price: 0,
+    link: candidate.sourceUrl,
+    address: candidate.addressText,
+    city: candidate.locationText,
+    gpsPosition: '',
+    slugArray: candidate.category ? [candidate.category.toLowerCase()] : [],
+    isAnnual: false,
+    startDate: candidate.startDate || getStartDateFromSourceText(candidate.dateText),
+    endDate: candidate.endDate,
+    openingHours: [],
+  }
+}
 
 export function useAdminCrawlerCandidates() {
   const candidates = ref<CrawledEventCandidate[]>([])
+  const activeStatus = ref<CrawledEventCandidateStatus>('new')
+  const approvalCandidate = ref<CrawledEventCandidate | null>(null)
+  const approvalForm = ref<CrawledEventApprovalPayload | null>(null)
+  const activeCandidateId = ref('')
   const errorMessage = ref('')
   const isCrawling = ref(false)
+  const isGeocoding = ref(false)
   const isLoading = ref(false)
   const successMessage = ref('')
 
@@ -18,7 +103,7 @@ export function useAdminCrawlerCandidates() {
     errorMessage.value = ''
 
     try {
-      candidates.value = await fetchNewOplevEsbjergEventCandidates()
+      candidates.value = await fetchOplevEsbjergEventCandidates(activeStatus.value)
     } catch (error) {
       errorMessage.value =
         error instanceof Error ? error.message : 'Eventkandidaterne kunne ikke hentes.'
@@ -43,17 +128,103 @@ export function useAdminCrawlerCandidates() {
     }
   }
 
+  async function setActiveStatus(status: CrawledEventCandidateStatus): Promise<void> {
+    if (activeStatus.value === status) return
+
+    activeStatus.value = status
+    await loadCandidates()
+  }
+
+  async function openApproval(candidate: CrawledEventCandidate): Promise<void> {
+    approvalCandidate.value = candidate
+    approvalForm.value = createApprovalForm(candidate)
+    errorMessage.value = ''
+    successMessage.value = ''
+
+    if (!candidate.locationText.trim()) return
+
+    isGeocoding.value = true
+    try {
+      // A venue name is often all Kultunaut provides. The existing geocoding
+      // endpoint supports this kind of place lookup without a street address.
+      const address = candidate.addressText || candidate.locationText
+      const location = await geocodeCandidateAddress(address)
+
+      if (approvalCandidate.value?._id === candidate._id && approvalForm.value) {
+        approvalForm.value.gpsPosition = `${location.latitude},${location.longitude}`
+        approvalForm.value.address = location.displayName
+      }
+    } catch {
+      // A venue can be ambiguous or missing in OpenStreetMap. Keep the form
+      // usable and let the admin correct only those exceptions.
+    } finally {
+      isGeocoding.value = false
+    }
+  }
+
+  function closeApproval(): void {
+    approvalCandidate.value = null
+    approvalForm.value = null
+  }
+
+  async function approveCandidate(): Promise<void> {
+    if (!approvalCandidate.value || !approvalForm.value) return
+
+    activeCandidateId.value = approvalCandidate.value._id
+    errorMessage.value = ''
+
+    try {
+      await approveOplevEsbjergEventCandidate(approvalCandidate.value._id, approvalForm.value)
+      candidates.value = candidates.value.filter(
+        (candidate) => candidate._id !== approvalCandidate.value?._id,
+      )
+      successMessage.value = 'Eventet er godkendt og er nu synligt for brugerne.'
+      closeApproval()
+    } catch (error) {
+      errorMessage.value = error instanceof Error ? error.message : 'Eventet kunne ikke godkendes.'
+    } finally {
+      activeCandidateId.value = ''
+    }
+  }
+
+  async function rejectCandidate(id: string): Promise<void> {
+    const reason = window.prompt('Hvorfor afvises denne eventkandidat?') ?? ''
+    activeCandidateId.value = id
+    errorMessage.value = ''
+    successMessage.value = ''
+
+    try {
+      await rejectOplevEsbjergEventCandidate(id, reason)
+      candidates.value = candidates.value.filter((candidate) => candidate._id !== id)
+      successMessage.value = 'Eventkandidaten er afvist.'
+    } catch (error) {
+      errorMessage.value = error instanceof Error ? error.message : 'Eventkandidaten kunne ikke afvises.'
+    } finally {
+      activeCandidateId.value = ''
+    }
+  }
+
   onMounted(() => {
     void loadCandidates()
   })
 
   return {
     candidates,
+    activeStatus,
+    approvalCandidate,
+    approvalForm,
+    activeCandidateId,
+    approveCandidate,
+    closeApproval,
     errorMessage,
     isCrawling,
+    isGeocoding,
     isLoading,
     loadCandidates,
+    openApproval,
+    rejectCandidate,
     runCrawler,
+    setActiveStatus,
     successMessage,
   }
 }

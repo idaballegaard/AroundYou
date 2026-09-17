@@ -9,6 +9,8 @@ const eventSchema = new Schema<Event>({
   price: { type: Number, required: true, min: 0 },
   link: { type: String, required: true },
   gpsPosition: { type: String, required: true },
+  address: { type: String, default: "" },
+  city: { type: String, default: "" },
   slugArray: { type: [String], default: [] },
   updateAt: { type: Date, default: Date.now },
   isAnnual: { type: Boolean, required: true, default: false },

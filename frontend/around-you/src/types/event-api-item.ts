@@ -7,6 +7,8 @@ export type EventApiItem = {
   price: number
   link: string
   gpsPosition: string
+  address?: string
+  city?: string
   isAnnual: boolean
   startDate: string
   endDate: string

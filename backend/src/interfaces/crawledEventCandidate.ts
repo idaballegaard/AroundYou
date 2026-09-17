@@ -13,9 +13,16 @@ export interface CrawledEventCandidate extends Document {
   description: string;
   dateText: string;
   locationText: string;
+  addressText: string;
   category: string;
   imageUrl: string;
+  startDate: string;
+  endDate: string;
   status: CrawledEventCandidateStatus;
+  publishedEventId?: string;
+  reviewedBy?: string;
+  reviewedAt?: Date;
+  rejectionReason?: string;
   crawledAt: Date;
   createdAt: Date;
   updatedAt: Date;

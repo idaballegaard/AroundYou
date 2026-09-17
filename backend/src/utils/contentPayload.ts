@@ -17,7 +17,10 @@ const link = text(1, 2048);
 const gpsPosition = Joi.string()
   .trim()
   .max(64)
-  .pattern(/^-?\d{1,2}(\.\d+)?\s*,\s*-?\d{1,3}(\.\d+)?$/);
+  .pattern(/^-?\d{1,2}(\.\d+)?\s*,\s*-?\d{1,3}(\.\d+)?$/)
+  // An empty value is resolved into coordinates below from the submitted
+  // address/place. Validation must not reject it before that can happen.
+  .allow("");
 const stringArray = Joi.array()
   .items(Joi.string().trim().max(120))
   .max(30)
@@ -121,6 +124,30 @@ function getTrimmedString(value: unknown): string | null {
   return trimmedValue ? trimmedValue : null;
 }
 
+async function geocodeEventOrAttractionLocation(
+  address: string | null,
+  city: string,
+) {
+  if (!address || !address.includes(",")) {
+    return geocodeLocation(address, city);
+  }
+
+  try {
+    return await geocodeLocation(null, address);
+  } catch {
+    // Kultunaut detail pages often prefix a usable street address with the
+    // venue name. Retry without that venue label, e.g. turn
+    // "Fulton af Marstal, Dokvej 3F, Esbjerg" into "Dokvej 3F, Esbjerg".
+    const addressWithoutVenue = address.split(",").slice(1).join(",").trim();
+
+    if (!addressWithoutVenue) {
+      throw new GeocodingServiceError("Lokationen kunne ikke findes via OpenStreetMap.", 404);
+    }
+
+    return geocodeLocation(null, addressWithoutVenue);
+  }
+}
+
 async function resolveMissingGpsPosition(
   type: ContentSuggestionType,
   payload: ContentPayload,
@@ -155,12 +182,15 @@ async function resolveMissingGpsPosition(
   const address = getTrimmedString(payload.address);
   const city = getTrimmedString(payload.city);
 
-  if (!address || !city) {
-    throwPayloadError("Indtast enten gpsPosition eller både address og city.");
+  if (!city) {
+    throwPayloadError("Indtast enten gpsPosition eller en by eller et sted.");
   }
 
   try {
-    payload.gpsPosition = formatGpsPosition(await geocodeLocation(address, city));
+    // Source imports often know a venue but not a street address. The
+    // geocoding service supports a city/place-only lookup for that case.
+    const location = await geocodeEventOrAttractionLocation(address, city);
+    payload.gpsPosition = formatGpsPosition(location);
   } catch (err) {
     if (err instanceof GeocodingServiceError) {
       throwPayloadError(err.message);
@@ -170,7 +200,16 @@ async function resolveMissingGpsPosition(
   }
 }
 
-function removeTransientLocationFields(payload: ContentPayload): void {
+function removeTransientLocationFields(
+  type: ContentSuggestionType,
+  payload: ContentPayload,
+): void {
+  // Events retain their human-readable venue/address alongside GPS for the
+  // detail page. Other canonical models do not currently store these fields.
+  if (type === "event") {
+    return;
+  }
+
   delete payload.address;
   delete payload.city;
 }
@@ -194,7 +233,7 @@ export async function sanitizeContentPayload(
   const sanitizedPayload = value as ContentPayload;
 
   await resolveMissingGpsPosition(type, sanitizedPayload);
-  removeTransientLocationFields(sanitizedPayload);
+  removeTransientLocationFields(type, sanitizedPayload);
   assertPayloadAllowedLanguage(type, sanitizedPayload);
 
   return sanitizedPayload;
@@ -223,7 +262,7 @@ export function sanitizeContentUpdatePayload(
 
   const sanitizedPayload = value as ContentPayload;
 
-  removeTransientLocationFields(sanitizedPayload);
+  removeTransientLocationFields(type, sanitizedPayload);
   assertPayloadAllowedLanguage(type, sanitizedPayload);
 
   return sanitizedPayload;

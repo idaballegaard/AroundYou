@@ -10,8 +10,13 @@ const crawledEventCandidateSchema = new Schema<CrawledEventCandidate>(
     description: { type: String, default: "", trim: true },
     dateText: { type: String, default: "", trim: true },
     locationText: { type: String, default: "", trim: true },
+    addressText: { type: String, default: "", trim: true },
     category: { type: String, default: "", trim: true },
     imageUrl: { type: String, default: "", trim: true },
+    // Local date-time strings are kept as supplied by the source so the admin
+    // form can show the correct Danish wall-clock time before publication.
+    startDate: { type: String, default: "", trim: true },
+    endDate: { type: String, default: "", trim: true },
     status: {
       type: String,
       enum: ["new", "approved", "rejected"],
@@ -19,6 +24,10 @@ const crawledEventCandidateSchema = new Schema<CrawledEventCandidate>(
       required: true,
       index: true,
     },
+    publishedEventId: { type: String, required: false },
+    reviewedBy: { type: String, required: false },
+    reviewedAt: { type: Date, required: false },
+    rejectionReason: { type: String, required: false, trim: true },
     crawledAt: { type: Date, required: true },
   },
   { timestamps: true },
