@@ -7,7 +7,8 @@ const KULTUNAUT_EVENT_FEED_URL =
   "https://www.kultunaut.dk/perl/nautjs/type-esbjerglive4?mm=1&tmplid=arrlist&callback=aroundYouCallback";
 const KULTUNAUT_EVENT_DETAIL_URL =
   "https://www.kultunaut.dk/perl/arrmore/type-esbjerglive4?ArrNr=";
-const MAX_EVENTS_PER_CRAWL = 12;
+const EVENTS_PER_PAGE = 12;
+const MAX_EVENTS_PER_CRAWL = 48;
 
 export type OplevEsbjergEventCandidate = {
   sourceId: string;
@@ -47,6 +48,14 @@ function getAbsoluteUrl(value: string | undefined): string {
   }
 
   return new URL(value, OPLEV_ESBJERG_EVENT_CALENDAR_URL).toString();
+}
+
+function getKultunautEventFeedUrl(startNumber: number): string {
+  if (startNumber <= 1) {
+    return KULTUNAUT_EVENT_FEED_URL;
+  }
+
+  return `${KULTUNAUT_EVENT_FEED_URL}&startnr=${startNumber}`;
 }
 
 const DANISH_MONTHS: Record<string, string> = {
@@ -231,19 +240,21 @@ async function addEventDetailAddresses(
 export async function crawlOplevEsbjergEvents(
   limit = MAX_EVENTS_PER_CRAWL,
 ): Promise<OplevEsbjergEventCrawl> {
-  let eventHtml = "";
+  const requestedLimit = Math.min(Math.max(limit, 1), MAX_EVENTS_PER_CRAWL);
+  const eventHtmlPages: string[] = [];
   let failureMessage = "Oplev Esbjergs eventkalender kunne ikke crawles.";
+  const pageCount = Math.ceil(requestedLimit / EVENTS_PER_PAGE);
 
   const crawler = new HttpCrawler(
     {
       maxConcurrency: 1,
       maxRequestRetries: 0,
-      maxRequestsPerCrawl: 1,
+      maxRequestsPerCrawl: pageCount,
       requestHandlerTimeoutSecs: 20,
       useSessionPool: false,
       additionalMimeTypes: ["application/javascript"],
       async requestHandler({ body }) {
-        eventHtml = extractKultunautHtml(body.toString());
+        eventHtmlPages.push(extractKultunautHtml(body.toString()));
       },
       failedRequestHandler(_context, error) {
         failureMessage = error instanceof Error ? error.message : failureMessage;
@@ -252,16 +263,21 @@ export async function crawlOplevEsbjergEvents(
     new Configuration({ persistStorage: false }),
   );
 
-  await crawler.run([KULTUNAUT_EVENT_FEED_URL]);
+  await crawler.run(
+    Array.from({ length: pageCount }, (_value, index) =>
+      getKultunautEventFeedUrl(index * EVENTS_PER_PAGE + 1),
+    ),
+  );
 
-  if (!eventHtml) {
+  if (!eventHtmlPages.length) {
     throw new OplevEsbjergEventCrawlerError(failureMessage);
   }
 
-  const events = parseOplevEsbjergEvents(eventHtml).slice(
-    0,
-    Math.min(Math.max(limit, 1), MAX_EVENTS_PER_CRAWL),
-  );
+  // The first page is today's events. Subsequent pages continue chronologically
+  // into coming days, so one import gives admins a useful forward-looking queue.
+  const events = eventHtmlPages
+    .flatMap((html) => parseOplevEsbjergEvents(html))
+    .slice(0, requestedLimit);
 
   return {
     source: OPLEV_ESBJERG_EVENT_SOURCE,
