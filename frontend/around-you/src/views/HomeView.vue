@@ -48,12 +48,12 @@
 
       <HomeContentSection
         title="Starter snart"
-        description="Oplevelser, der er på vej til at begynde. Starter inden for de næste 2 timer"
-        :loading="citiesLoading"
-        :error="citiesError"
-        :cards="cityCards"
-        loading-text="Henter oplevelser, der starter snart..."
-        empty-text="Vi kunne ikke finde oplevelser, der starter snart."
+        description="Events, der starter om 1-2 timer."
+        :loading="soonLoading"
+        :error="soonError"
+        :cards="soonCards"
+        loading-text="Henter events, der starter om 1-2 timer..."
+        empty-text="Der er ingen events, der starter om 1-2 timer."
         layout="timeline"
         icon="◷"
         icon-class="bg-[#f28c13]"
@@ -120,9 +120,9 @@ const {
   nowCards,
   nowLoading,
   nowError,
-  cityCards,
-  citiesLoading,
-  citiesError,
+  soonCards,
+  soonLoading,
+  soonError,
   natureCards,
   natureLoading,
   natureError,

@@ -19,8 +19,18 @@ async function fetchJson<T>(path: string): Promise<T> {
   return apiGetCached<T>(path)
 }
 
-export function getEventsStartingSoon(now: Date): Promise<EventApiItem[]> {
-  return apiRequest<EventApiItem[]>(`/events/starting-soon?from=${encodeURIComponent(now.toISOString())}`)
+export function getEventsStartingBetween(
+  now: Date,
+  afterMinutes: number,
+  withinMinutes: number,
+): Promise<EventApiItem[]> {
+  const query = new URLSearchParams({
+    from: now.toISOString(),
+    afterMinutes: String(afterMinutes),
+    withinMinutes: String(withinMinutes),
+  })
+
+  return apiRequest<EventApiItem[]>(`/events/starting-soon?${query}`)
 }
 
 function toRadians(value: number): number {

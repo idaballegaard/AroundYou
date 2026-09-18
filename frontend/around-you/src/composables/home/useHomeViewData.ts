@@ -2,8 +2,7 @@ import { computed, onMounted, watch } from 'vue'
 import {
   DEFAULT_NEARBY_LOCATION_DESCRIPTION,
   getFamilyExperiences,
-  getEventsStartingSoon,
-  getLargestCities,
+  getEventsStartingBetween,
   getNatureExperiences,
   getNearbyLocationContent,
 } from '@/api/attractions.api'
@@ -36,11 +35,6 @@ export const useHomeViewData = () => {
     },
   )
 
-  const citiesSection = useAsyncData<ExperienceCard[]>(() => getLargestCities(4), {
-    defaultValue: [],
-    getErrorMessage: () => 'Vi kunne ikke hente de største byer',
-  })
-
   const natureSection = useAsyncData<ExperienceCard[]>(() => getNatureExperiences(4), {
     defaultValue: [],
     getErrorMessage: () => 'Vi kunne ikke hente naturoplevelser',
@@ -51,24 +45,36 @@ export const useHomeViewData = () => {
     getErrorMessage: () => 'Vi kunne ikke hente familieoplevelser.',
   })
 
+  function toEventCards(events: Awaited<ReturnType<typeof getEventsStartingBetween>>) {
+    return events.map((event) => ({
+      id: event._id,
+      name: event.name,
+      description: event.description,
+      image: resolveApiAssetUrl(event.heroImage),
+      rating: event.rating ?? 0,
+      reviews: 0,
+      tags: event.slugArray?.slice(0, 3) ?? [],
+      metaText: `Starter kl. ${new Date(event.startDate).toLocaleTimeString('da-DK', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })}`,
+      href: `/event/${event._id}`,
+    }))
+  }
+
+  const eventsStartingNowSection = useAsyncData<ExperienceCard[]>(
+    async () => {
+      return toEventCards(await getEventsStartingBetween(new Date(), 0, 60))
+    },
+    {
+      defaultValue: [],
+      getErrorMessage: () => 'Vi kunne ikke hente events, der starter snart.',
+    },
+  )
+
   const eventsStartingSoonSection = useAsyncData<ExperienceCard[]>(
     async () => {
-      const events = await getEventsStartingSoon(new Date())
-
-      return events.map((event) => ({
-        id: event._id,
-        name: event.name,
-        description: event.description,
-        image: resolveApiAssetUrl(event.heroImage),
-        rating: event.rating ?? 0,
-        reviews: 0,
-        tags: event.slugArray?.slice(0, 3) ?? [],
-        metaText: `Starter kl. ${new Date(event.startDate).toLocaleTimeString('da-DK', {
-          hour: '2-digit',
-          minute: '2-digit',
-        })}`,
-        href: `/event/${event._id}`,
-      }))
+      return toEventCards(await getEventsStartingBetween(new Date(), 60, 120))
     },
     {
       defaultValue: [],
@@ -115,12 +121,12 @@ export const useHomeViewData = () => {
   )
 
   onMounted(() => {
-    void eventsStartingSoonSection.execute().catch((error) => {
+    void eventsStartingNowSection.execute().catch((error) => {
       console.error('Fejl ved hentning af events, der starter snart:', error)
     })
 
-    void citiesSection.execute().catch((error) => {
-      console.error('Fejl ved hentning af byer:', error)
+    void eventsStartingSoonSection.execute().catch((error) => {
+      console.error('Fejl ved hentning af events om 1-2 timer:', error)
     })
 
     void natureSection.execute().catch((error) => {
@@ -140,17 +146,17 @@ export const useHomeViewData = () => {
     nearbyCards,
     nearbyLoading: nearbySection.loading,
     nearbyError: nearbySection.error,
-    cityCards: citiesSection.data,
-    citiesLoading: citiesSection.loading,
-    citiesError: citiesSection.error,
     natureCards: natureSection.data,
     natureLoading: natureSection.loading,
     natureError: natureSection.error,
     familyCards: familySection.data,
     familyLoading: familySection.loading,
     familyError: familySection.error,
-    nowCards: eventsStartingSoonSection.data,
-    nowLoading: eventsStartingSoonSection.loading,
-    nowError: eventsStartingSoonSection.error,
+    nowCards: eventsStartingNowSection.data,
+    nowLoading: eventsStartingNowSection.loading,
+    nowError: eventsStartingNowSection.error,
+    soonCards: eventsStartingSoonSection.data,
+    soonLoading: eventsStartingSoonSection.loading,
+    soonError: eventsStartingSoonSection.error,
   }
 }

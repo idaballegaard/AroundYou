@@ -26,6 +26,15 @@ function getCurrentTime(value: unknown): Date {
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
+function getMinutes(value: unknown, fallback: number): number {
+  if (typeof value !== "string") {
+    return fallback;
+  }
+
+  const minutes = Number(value);
+  return Number.isInteger(minutes) && minutes >= 0 && minutes <= 180 ? minutes : fallback;
+}
+
 export async function getEventsStartingSoon(
   req: Request,
   res: Response,
@@ -33,8 +42,16 @@ export async function getEventsStartingSoon(
   try {
     // The browser supplies its current time so this stays accurate for the
     // user's timezone; invalid values safely fall back to the server clock.
-    const start = getCurrentTime(req.query.from);
-    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    const now = getCurrentTime(req.query.from);
+    const afterMinutes = getMinutes(req.query.afterMinutes, 0);
+    const withinMinutes = getMinutes(req.query.withinMinutes, 60);
+    const start = new Date(now.getTime() + afterMinutes * 60 * 1000);
+    const end = new Date(now.getTime() + withinMinutes * 60 * 1000);
+
+    if (end < start) {
+      res.status(400).json({ message: "Invalid event time range" });
+      return;
+    }
 
     res.status(200).json(await findEventsStartingSoon(start, end));
   } catch (err) {
