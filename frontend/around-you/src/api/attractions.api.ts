@@ -7,7 +7,7 @@ import type { LargestCityCard } from '@/types/largest-city-card'
 import type { NatureExperienceCard } from '@/types/nature-experience-card'
 import type { NatureExperienceSource } from '@/types/nature-experience-source'
 import type { NearbyLocationContent } from '@/types/nearby-location-content'
-import { apiGetCached } from '@/api/http'
+import { apiGetCached, apiRequest } from '@/api/http'
 import { getReviewsByTarget } from '@/api/reviews.api'
 import { resolveApiAssetUrl } from '@/constants/config'
 import { distanceKm, parseGpsPosition } from '@/utils/geo'
@@ -17,6 +17,10 @@ export const DEFAULT_NEARBY_LOCATION_DESCRIPTION =
 
 async function fetchJson<T>(path: string): Promise<T> {
   return apiGetCached<T>(path)
+}
+
+export function getEventsStartingSoon(now: Date): Promise<EventApiItem[]> {
+  return apiRequest<EventApiItem[]>(`/events/starting-soon?from=${encodeURIComponent(now.toISOString())}`)
 }
 
 function toRadians(value: number): number {

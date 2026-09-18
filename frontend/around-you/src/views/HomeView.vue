@@ -32,12 +32,12 @@
       <div class="space-y-3 px-3 pb-6 sm:space-y-4 sm:px-8 sm:pb-10">
       <HomeContentSection
         title="Sker lige nu"
-        description="Aktiviteter og oplevelser tæt på dig lige nu. Starter inden for den næste time"
-        :loading="nearbyLoading"
-        :error="nearbyError"
+        description="Events, der starter inden for den næste time."
+        :loading="nowLoading"
+        :error="nowError"
         :cards="nowCards"
-        loading-text="Henter seværdigheder nær din lokation..."
-        empty-text="Der blev ikke fundet seværdigheder i nærheden."
+        loading-text="Henter events, der starter inden for den næste time..."
+        empty-text="Der er ingen events, der starter inden for den næste time."
         layout="timeline"
         icon="✳"
         icon-class="bg-[#de3d3d]"
@@ -110,7 +110,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import HomeContentSection from '@/components/HomeContentSection.vue'
 import { useHomeViewData } from '@/composables/home/useHomeViewData'
@@ -118,9 +117,9 @@ import { useHomeViewData } from '@/composables/home/useHomeViewData'
 const {
   changeLocation,
   userLocation,
-  nearbyCards,
-  nearbyLoading,
-  nearbyError,
+  nowCards,
+  nowLoading,
+  nowError,
   cityCards,
   citiesLoading,
   citiesError,
@@ -131,8 +130,4 @@ const {
   familyLoading,
   familyError,
 } = useHomeViewData()
-
-// Indtil tidsfiltreret indhold hentes fra databasen, vises de eksisterende kort her.
-// Bykortene er fallback, når brugerens lokation ikke er tilgængelig.
-const nowCards = computed(() => (nearbyCards.value.length ? nearbyCards.value : cityCards.value))
 </script>

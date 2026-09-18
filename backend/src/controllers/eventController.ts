@@ -9,12 +9,39 @@ import {
   createEventRecord,
   findEventById,
   findEvents,
+  findEventsStartingSoon,
   hideEventRecord,
   queryEvents,
   queryEventsByField,
   restoreEventRecord,
   updateEventRecord,
 } from "../services/event.service";
+
+function getCurrentTime(value: unknown): Date {
+  if (typeof value !== "string") {
+    return new Date();
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
+export async function getEventsStartingSoon(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    // The browser supplies its current time so this stays accurate for the
+    // user's timezone; invalid values safely fall back to the server clock.
+    const start = getCurrentTime(req.query.from);
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+
+    res.status(200).json(await findEventsStartingSoon(start, end));
+  } catch (err) {
+    console.error("Error fetching events starting soon:", err);
+    res.status(500).json({ message: "Error retrieving events starting soon" });
+  }
+}
 
 /**
  * CREATE EVENT

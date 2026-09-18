@@ -4,6 +4,7 @@ import {
   deleteEventById,
   getAllEvents,
   getEventById,
+  getEventsStartingSoon,
   updateEventById,
 } from "../controllers/eventController";
 import { contentWriteRateLimiter } from "../middleware/rateLimit";
@@ -20,6 +21,7 @@ router.post(
   createEvent,
 );
 router.get("/events", getAllEvents);
+router.get("/events/starting-soon", getEventsStartingSoon);
 router.get("/events/:id", getEventById);
 router.put(
   "/events/:id",

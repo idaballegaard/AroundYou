@@ -12,6 +12,19 @@ export function findEvents(visibilityFilter: Record<string, unknown>) {
   return EventModel.find(visibilityFilter);
 }
 
+export function findEventsStartingSoon(
+  start: Date,
+  end: Date,
+  limit = 4,
+) {
+  return EventModel.find({
+    isHidden: { $ne: true },
+    startDate: { $gte: start, $lte: end },
+  })
+    .sort({ startDate: 1 })
+    .limit(limit);
+}
+
 export function findEventById(id: string, visibilityFilter: Record<string, unknown>) {
   return EventModel.findOne({
     _id: id,

@@ -2,6 +2,7 @@ import { computed, onMounted, watch } from 'vue'
 import {
   DEFAULT_NEARBY_LOCATION_DESCRIPTION,
   getFamilyExperiences,
+  getEventsStartingSoon,
   getLargestCities,
   getNatureExperiences,
   getNearbyLocationContent,
@@ -10,6 +11,7 @@ import { useGeolocationStore } from '@/stores/geolocation'
 import type { ExperienceCard } from '@/types/experience-card'
 import type { NearbyLocationContent } from '@/types/nearby-location-content'
 import { useAsyncData } from '@/composables/useAsyncData'
+import { resolveApiAssetUrl } from '@/constants/config'
 
 const emptyNearbyContent: NearbyLocationContent = {
   locationName: 'din lokation',
@@ -48,6 +50,31 @@ export const useHomeViewData = () => {
     defaultValue: [],
     getErrorMessage: () => 'Vi kunne ikke hente familieoplevelser.',
   })
+
+  const eventsStartingSoonSection = useAsyncData<ExperienceCard[]>(
+    async () => {
+      const events = await getEventsStartingSoon(new Date())
+
+      return events.map((event) => ({
+        id: event._id,
+        name: event.name,
+        description: event.description,
+        image: resolveApiAssetUrl(event.heroImage),
+        rating: event.rating ?? 0,
+        reviews: 0,
+        tags: event.slugArray?.slice(0, 3) ?? [],
+        metaText: `Starter kl. ${new Date(event.startDate).toLocaleTimeString('da-DK', {
+          hour: '2-digit',
+          minute: '2-digit',
+        })}`,
+        href: `/event/${event._id}`,
+      }))
+    },
+    {
+      defaultValue: [],
+      getErrorMessage: () => 'Vi kunne ikke hente events, der starter snart.',
+    },
+  )
 
   const userLocation = computed(() => nearbySection.data.value.locationName)
   const userLocationDescription = computed(() => nearbySection.data.value.locationDescription)
@@ -88,6 +115,10 @@ export const useHomeViewData = () => {
   )
 
   onMounted(() => {
+    void eventsStartingSoonSection.execute().catch((error) => {
+      console.error('Fejl ved hentning af events, der starter snart:', error)
+    })
+
     void citiesSection.execute().catch((error) => {
       console.error('Fejl ved hentning af byer:', error)
     })
@@ -118,5 +149,8 @@ export const useHomeViewData = () => {
     familyCards: familySection.data,
     familyLoading: familySection.loading,
     familyError: familySection.error,
+    nowCards: eventsStartingSoonSection.data,
+    nowLoading: eventsStartingSoonSection.loading,
+    nowError: eventsStartingSoonSection.error,
   }
 }
