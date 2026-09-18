@@ -64,12 +64,12 @@
 
       <HomeContentSection
         title="Senere i dag"
-        description="Flere gode muligheder resten af dagen."
-        :loading="natureLoading"
-        :error="natureError"
-        :cards="natureCards"
-        loading-text="Henter oplevelser senere i dag..."
-        empty-text="Vi kunne ikke finde oplevelser senere i dag."
+        description="Events, der starter senere i dag."
+        :loading="laterTodayLoading"
+        :error="laterTodayError"
+        :cards="laterTodayCards"
+        loading-text="Henter events senere i dag..."
+        empty-text="Der er ingen events, der starter senere i dag."
         layout="timeline"
         icon="☀"
         icon-class="bg-[#f5ae16]"
@@ -123,9 +123,9 @@ const {
   soonCards,
   soonLoading,
   soonError,
-  natureCards,
-  natureLoading,
-  natureError,
+  laterTodayCards,
+  laterTodayLoading,
+  laterTodayError,
   familyCards,
   familyLoading,
   familyError,

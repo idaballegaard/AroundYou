@@ -32,7 +32,7 @@ function getMinutes(value: unknown, fallback: number): number {
   }
 
   const minutes = Number(value);
-  return Number.isInteger(minutes) && minutes >= 0 && minutes <= 180 ? minutes : fallback;
+  return Number.isInteger(minutes) && minutes >= 0 && minutes <= 24 * 60 ? minutes : fallback;
 }
 
 export async function getEventsStartingSoon(

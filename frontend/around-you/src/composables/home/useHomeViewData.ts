@@ -3,7 +3,6 @@ import {
   DEFAULT_NEARBY_LOCATION_DESCRIPTION,
   getFamilyExperiences,
   getEventsStartingBetween,
-  getNatureExperiences,
   getNearbyLocationContent,
 } from '@/api/attractions.api'
 import { useGeolocationStore } from '@/stores/geolocation'
@@ -35,11 +34,6 @@ export const useHomeViewData = () => {
     },
   )
 
-  const natureSection = useAsyncData<ExperienceCard[]>(() => getNatureExperiences(4), {
-    defaultValue: [],
-    getErrorMessage: () => 'Vi kunne ikke hente naturoplevelser',
-  })
-
   const familySection = useAsyncData<ExperienceCard[]>(() => getFamilyExperiences(4), {
     defaultValue: [],
     getErrorMessage: () => 'Vi kunne ikke hente familieoplevelser.',
@@ -62,6 +56,13 @@ export const useHomeViewData = () => {
     }))
   }
 
+  function getMinutesUntilEndOfToday(now: Date): number {
+    const endOfToday = new Date(now)
+    endOfToday.setHours(23, 59, 59, 999)
+
+    return Math.ceil((endOfToday.getTime() - now.getTime()) / (60 * 1000))
+  }
+
   const eventsStartingNowSection = useAsyncData<ExperienceCard[]>(
     async () => {
       return toEventCards(await getEventsStartingBetween(new Date(), 0, 60))
@@ -79,6 +80,23 @@ export const useHomeViewData = () => {
     {
       defaultValue: [],
       getErrorMessage: () => 'Vi kunne ikke hente events, der starter snart.',
+    },
+  )
+
+  const eventsLaterTodaySection = useAsyncData<ExperienceCard[]>(
+    async () => {
+      const now = new Date()
+      const endOfDayMinutes = getMinutesUntilEndOfToday(now)
+
+      if (endOfDayMinutes <= 120) {
+        return []
+      }
+
+      return toEventCards(await getEventsStartingBetween(now, 120, endOfDayMinutes))
+    },
+    {
+      defaultValue: [],
+      getErrorMessage: () => 'Vi kunne ikke hente events senere i dag.',
     },
   )
 
@@ -129,8 +147,8 @@ export const useHomeViewData = () => {
       console.error('Fejl ved hentning af events om 1-2 timer:', error)
     })
 
-    void natureSection.execute().catch((error) => {
-      console.error('Fejl ved hentning af naturoplevelser:', error)
+    void eventsLaterTodaySection.execute().catch((error) => {
+      console.error('Fejl ved hentning af events senere i dag:', error)
     })
 
     void familySection.execute().catch((error) => {
@@ -146,9 +164,6 @@ export const useHomeViewData = () => {
     nearbyCards,
     nearbyLoading: nearbySection.loading,
     nearbyError: nearbySection.error,
-    natureCards: natureSection.data,
-    natureLoading: natureSection.loading,
-    natureError: natureSection.error,
     familyCards: familySection.data,
     familyLoading: familySection.loading,
     familyError: familySection.error,
@@ -158,5 +173,8 @@ export const useHomeViewData = () => {
     soonCards: eventsStartingSoonSection.data,
     soonLoading: eventsStartingSoonSection.loading,
     soonError: eventsStartingSoonSection.error,
+    laterTodayCards: eventsLaterTodaySection.data,
+    laterTodayLoading: eventsLaterTodaySection.loading,
+    laterTodayError: eventsLaterTodaySection.error,
   }
 }
