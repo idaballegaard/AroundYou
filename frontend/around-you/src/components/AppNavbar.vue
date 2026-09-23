@@ -1,5 +1,5 @@
 <template>
-  <header class="sticky top-0 z-50 border-b border-[#094b7b]/10 bg-white px-4 py-4">
+  <header class="relative z-50 border-b border-[#094b7b]/10 bg-white px-4 py-4">
     <nav
       ref="navRef"
       class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-y-3 px-1 py-1 md:px-2"
