@@ -7,6 +7,7 @@ import { setupDocs } from "./utils/swaggerDocumentation";
 import { connectDB } from "./repository/database";
 import { ensureDefaultAdminUser } from "./services/admin.service";
 import { startOplevEsbjergImportScheduler } from "./services/oplevEsbjergImportScheduler.service";
+import { startEventExpirationScheduler } from "./services/eventExpirationScheduler.service";
 
 dotenvFlow.config();
 
@@ -94,6 +95,7 @@ export async function startServer() {
   // and health checks do not hit a partially initialized API.
   await connectDB();
   await ensureDefaultAdminUser();
+  await startEventExpirationScheduler();
   startOplevEsbjergImportScheduler();
 
   const PORT: number = Number(process.env.PORT as string) || 4000;

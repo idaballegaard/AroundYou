@@ -45,6 +45,27 @@ export function hideEventRecord(id: string, hiddenBy?: string) {
   });
 }
 
+export async function archiveExpiredEventRecords(referenceTime = new Date()): Promise<number> {
+  const result = await EventModel.updateMany(
+    {
+      isHidden: { $ne: true },
+      // Annual events are managed by admins and must not disappear merely
+      // because last year's saved date has passed.
+      isAnnual: { $ne: true },
+      endDate: { $lt: referenceTime },
+    },
+    {
+      $set: {
+        isHidden: true,
+        hiddenAt: referenceTime,
+        hiddenBy: "system",
+      },
+    },
+  );
+
+  return result.modifiedCount;
+}
+
 export function restoreEventRecord(id: string) {
   return EventModel.findByIdAndUpdate(id, getRestoreUpdate(), {
     new: true,

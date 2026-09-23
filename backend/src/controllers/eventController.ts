@@ -35,6 +35,21 @@ function getMinutes(value: unknown, fallback: number): number {
   return Number.isInteger(minutes) && minutes >= 0 && minutes <= 24 * 60 ? minutes : fallback;
 }
 
+function eventVisibilityFilter(req: Request): Record<string, unknown> {
+  const visibility = visibleFilter(req);
+
+  // The scheduler archives old events, while this filter is a safety net so a
+  // public request can never expose an event that has already ended.
+  if (req.originalUrl.startsWith("/api/admin/")) {
+    return visibility;
+  }
+
+  return {
+    ...visibility,
+    $or: [{ isAnnual: true }, { endDate: { $gte: new Date() } }],
+  };
+}
+
 export async function getEventsStartingSoon(
   req: Request,
   res: Response,
@@ -79,7 +94,7 @@ export async function createEvent(req: Request, res: Response): Promise<void> {
  */
 export async function getAllEvents(req: Request, res: Response): Promise<void> {
   try {
-    const result = await findEvents(visibleFilter(req));
+    const result = await findEvents(eventVisibilityFilter(req));
     res.status(200).json(result);
   } catch (err) {
     console.error("Error fetching events:", err);
@@ -94,7 +109,7 @@ export async function getAllEvents(req: Request, res: Response): Promise<void> {
  */
 export async function getEventById(req: Request, res: Response): Promise<void> {
   try {
-    const result = await findEventById(getRouteParam(req.params.id), visibleFilter(req));
+    const result = await findEventById(getRouteParam(req.params.id), eventVisibilityFilter(req));
 
     if (!result) {
       res.status(404).json({ message: "Event not found" });
@@ -201,7 +216,7 @@ export async function getEventByQuery(
     const key = req.params.key as string;
     const value = req.params.value as string;
 
-    const result = await queryEventsByField(key, value, visibleFilter(req));
+    const result = await queryEventsByField(key, value, eventVisibilityFilter(req));
 
     res.status(200).json(result);
   } catch (err) {
@@ -220,7 +235,7 @@ export async function getEventByGenericQuery(
   res: Response,
 ): Promise<void> {
   try {
-    const result = await queryEvents(req.body, visibleFilter(req));
+    const result = await queryEvents(req.body, eventVisibilityFilter(req));
 
     res.status(200).json(result);
   } catch (err) {
