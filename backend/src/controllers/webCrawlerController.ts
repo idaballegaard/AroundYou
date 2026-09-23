@@ -3,6 +3,7 @@ import { crawlPage, WebCrawlerError } from "../services/webCrawler.service";
 import {
   OplevEsbjergEventCrawlerError,
 } from "../services/oplevEsbjergEventCrawler.service";
+import { EsbjergLibraryEventCrawlerError } from "../services/esbjergLibraryEventCrawler.service";
 import {
   approveCrawledEventCandidate,
   CrawledEventCandidateReviewError,
@@ -80,7 +81,7 @@ export async function crawlOplevEsbjergEventCalendar(
   try {
     res.status(200).json(await runOplevEsbjergEventImport("manual", parseLimit(req.query.limit)));
   } catch (error) {
-    if (error instanceof OplevEsbjergEventCrawlerError) {
+    if (error instanceof OplevEsbjergEventCrawlerError || error instanceof EsbjergLibraryEventCrawlerError) {
       res.status(502).json({ message: error.message });
       return;
     }
@@ -168,7 +169,11 @@ export async function getCrawlerEventImportStatus(
     const nextImport = scheduled ? getNextOplevEsbjergImportTime() : null;
 
     res.status(200).json({
-      source: { id: source.id, label: source.label },
+      source: {
+        id: source.id,
+        label: source.label,
+        supportsScheduledImport: source.supportsScheduledImport,
+      },
       dailyImportEnabled: scheduled && isOplevEsbjergDailyImportEnabled(),
       dailyImportHour: scheduled ? getOplevEsbjergDailyImportHour() : null,
       nextImportAt: nextImport?.toISOString() ?? null,

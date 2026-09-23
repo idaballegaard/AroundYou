@@ -44,6 +44,11 @@ export type CrawlerImportRun = {
 }
 
 export type OplevEsbjergCrawlerStatus = {
+  source: {
+    id: string
+    label: string
+    supportsScheduledImport: boolean
+  }
   dailyImportEnabled: boolean
   dailyImportHour: number | null
   nextImportAt: string | null

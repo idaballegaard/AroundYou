@@ -4,8 +4,21 @@ import { createEventRecord } from "./event.service";
 import {
   crawlOplevEsbjergEvents,
   OPLEV_ESBJERG_EVENT_SOURCE,
-  OplevEsbjergEventCandidate,
 } from "./oplevEsbjergEventCrawler.service";
+
+export type CrawledEventCandidateInput = {
+  sourceId: string;
+  sourceUrl: string;
+  title: string;
+  description: string;
+  dateText: string;
+  locationText: string;
+  addressText: string;
+  category: string;
+  imageUrl: string;
+  startDate: string;
+  endDate: string;
+};
 
 export type CrawledEventCandidatePersistence = {
   inserted: number;
@@ -117,7 +130,7 @@ export async function rejectCrawledEventCandidate(
 
 export async function saveCrawledEventCandidates(
   source: string,
-  events: OplevEsbjergEventCandidate[],
+  events: CrawledEventCandidateInput[],
   crawledAt: string,
 ): Promise<CrawledEventCandidatePersistence> {
   if (!events.length) {

@@ -32,7 +32,7 @@
           :disabled="isCrawling"
           @click="runCrawler"
         >
-          {{ isCrawling ? 'Henter events...' : 'Hent events fra Oplev Esbjerg' }}
+          {{ isCrawling ? 'Henter events...' : `Hent events fra ${selectedSourceLabel}` }}
         </button>
       </div>
     </div>
@@ -55,7 +55,9 @@
         <p class="mt-1 text-slate-500">
           {{ crawlerStatus.dailyImportEnabled && crawlerStatus.nextImportAt
             ? `Næste automatiske import: ${formatDate(crawlerStatus.nextImportAt)}`
-            : 'Automatisk import er deaktiveret.' }}
+            : crawlerStatus.source.supportsScheduledImport
+              ? 'Automatisk import er deaktiveret.'
+              : 'Automatisk import er ikke sat op for denne kilde.' }}
         </p>
       </template>
       <p v-else class="mt-1 text-slate-500">Henter importstatus...</p>
@@ -163,6 +165,7 @@ const {
   rejectCandidate,
   runCrawler,
   selectedSourceId,
+  selectedSourceLabel,
   setSelectedSource,
   setActiveStatus,
   statusError,

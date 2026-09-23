@@ -1,4 +1,4 @@
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 import { getGeocodedCoordinates } from '@/api/geocoding.api'
 import {
@@ -94,6 +94,9 @@ export function useAdminCrawlerCandidates() {
   const candidates = ref<CrawledEventCandidate[]>([])
   const crawlerSources = ref<CrawlerEventSource[]>([])
   const selectedSourceId = ref('oplev-esbjerg')
+  const selectedSourceLabel = computed(
+    () => crawlerSources.value.find((source) => source.id === selectedSourceId.value)?.label ?? 'eventkilden',
+  )
   const crawlerStatus = ref<OplevEsbjergCrawlerStatus | null>(null)
   const activeStatus = ref<CrawledEventCandidateStatus>('new')
   const approvalCandidate = ref<CrawledEventCandidate | null>(null)
@@ -275,6 +278,7 @@ export function useAdminCrawlerCandidates() {
     rejectCandidate,
     runCrawler,
     selectedSourceId,
+    selectedSourceLabel,
     setSelectedSource,
     statusError,
     setActiveStatus,

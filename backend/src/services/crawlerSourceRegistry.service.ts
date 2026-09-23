@@ -1,4 +1,5 @@
 import { importOplevEsbjergEventCandidates } from "./crawledEventCandidate.service";
+import { importEsbjergLibraryEventCandidates } from "./esbjergLibraryEventCrawler.service";
 import { OPLEV_ESBJERG_EVENT_SOURCE } from "./oplevEsbjergEventCrawler.service";
 
 export type CrawlerEventSource = {
@@ -31,8 +32,9 @@ const crawlerEventSources: CrawlerEventSource[] = [
     label: "Esbjerg Kommunes Biblioteker",
     sourceUrl: "https://www.esbjergbibliotek.dk/arrangementer",
     candidateSource: "Esbjerg Kommunes Biblioteker arrangementer",
-    status: "planned",
+    status: "active",
     supportsScheduledImport: false,
+    importCandidates: importEsbjergLibraryEventCandidates,
   },
   {
     id: "esbjerg-city",
