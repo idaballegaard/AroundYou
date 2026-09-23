@@ -1,6 +1,8 @@
 import { getAuthToken } from '@/api/authSession'
 import { apiRequest } from '@/api/http'
 
+const OPLEV_ESBJERG_SOURCE_ID = 'oplev-esbjerg'
+
 export type CrawledEventCandidate = {
   _id: string
   sourceUrl: string
@@ -43,9 +45,15 @@ export type CrawlerImportRun = {
 
 export type OplevEsbjergCrawlerStatus = {
   dailyImportEnabled: boolean
-  dailyImportHour: number
+  dailyImportHour: number | null
   nextImportAt: string | null
   lastRun: CrawlerImportRun | null
+}
+
+export type CrawlerEventSource = {
+  id: string
+  label: string
+  supportsScheduledImport: boolean
 }
 
 export type CrawledEventApprovalPayload = {
@@ -68,21 +76,22 @@ export type CrawledEventCandidateStatus = CrawledEventCandidate['status']
 
 export function fetchOplevEsbjergEventCandidates(
   status: CrawledEventCandidateStatus = 'new',
+  sourceId = OPLEV_ESBJERG_SOURCE_ID,
 ): Promise<CrawledEventCandidate[]> {
-  return apiRequest<CrawledEventCandidate[]>(`/admin/crawler/oplev-esbjerg/events?status=${status}`, {
+  return apiRequest<CrawledEventCandidate[]>(`/admin/crawler/events?source=${encodeURIComponent(sourceId)}&status=${status}`, {
     token: getAuthToken(),
   })
 }
 
-export function crawlOplevEsbjergEvents(): Promise<CrawlOplevEsbjergEventsResponse> {
-  return apiRequest<CrawlOplevEsbjergEventsResponse>('/admin/crawler/oplev-esbjerg/events', {
+export function crawlOplevEsbjergEvents(sourceId = OPLEV_ESBJERG_SOURCE_ID): Promise<CrawlOplevEsbjergEventsResponse> {
+  return apiRequest<CrawlOplevEsbjergEventsResponse>(`/admin/crawler/events?source=${encodeURIComponent(sourceId)}`, {
     method: 'POST',
     token: getAuthToken(),
   })
 }
 
-export function fetchOplevEsbjergCrawlerStatus(): Promise<OplevEsbjergCrawlerStatus> {
-  return apiRequest<OplevEsbjergCrawlerStatus>('/admin/crawler/oplev-esbjerg/status', {
+export function fetchOplevEsbjergCrawlerStatus(sourceId = OPLEV_ESBJERG_SOURCE_ID): Promise<OplevEsbjergCrawlerStatus> {
+  return apiRequest<OplevEsbjergCrawlerStatus>(`/admin/crawler/status?source=${encodeURIComponent(sourceId)}`, {
     token: getAuthToken(),
   })
 }
@@ -90,8 +99,9 @@ export function fetchOplevEsbjergCrawlerStatus(): Promise<OplevEsbjergCrawlerSta
 export function approveOplevEsbjergEventCandidate(
   id: string,
   payload: CrawledEventApprovalPayload,
+  sourceId = OPLEV_ESBJERG_SOURCE_ID,
 ): Promise<unknown> {
-  return apiRequest(`/admin/crawler/oplev-esbjerg/events/${encodeURIComponent(id)}/approve`, {
+  return apiRequest(`/admin/crawler/events/${encodeURIComponent(id)}/approve?source=${encodeURIComponent(sourceId)}`, {
     method: 'POST',
     token: getAuthToken(),
     headers: { 'Content-Type': 'application/json' },
@@ -99,11 +109,15 @@ export function approveOplevEsbjergEventCandidate(
   })
 }
 
-export function rejectOplevEsbjergEventCandidate(id: string, reason: string): Promise<unknown> {
-  return apiRequest(`/admin/crawler/oplev-esbjerg/events/${encodeURIComponent(id)}/reject`, {
+export function rejectOplevEsbjergEventCandidate(id: string, reason: string, sourceId = OPLEV_ESBJERG_SOURCE_ID): Promise<unknown> {
+  return apiRequest(`/admin/crawler/events/${encodeURIComponent(id)}/reject?source=${encodeURIComponent(sourceId)}`, {
     method: 'POST',
     token: getAuthToken(),
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ reason }),
   })
+}
+
+export function fetchCrawlerEventSources(): Promise<CrawlerEventSource[]> {
+  return apiRequest<CrawlerEventSource[]>('/admin/crawler/sources', { token: getAuthToken() })
 }

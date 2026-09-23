@@ -4,12 +4,14 @@ import { getGeocodedCoordinates } from '@/api/geocoding.api'
 import {
   approveOplevEsbjergEventCandidate,
   crawlOplevEsbjergEvents,
+  fetchCrawlerEventSources,
   fetchOplevEsbjergCrawlerStatus,
   fetchOplevEsbjergEventCandidates,
   rejectOplevEsbjergEventCandidate,
   type CrawledEventApprovalPayload,
   type CrawledEventCandidate,
   type CrawledEventCandidateStatus,
+  type CrawlerEventSource,
   type OplevEsbjergCrawlerStatus,
 } from '@/api/crawledEventCandidates.api'
 
@@ -90,6 +92,8 @@ function createApprovalForm(candidate: CrawledEventCandidate): CrawledEventAppro
 
 export function useAdminCrawlerCandidates() {
   const candidates = ref<CrawledEventCandidate[]>([])
+  const crawlerSources = ref<CrawlerEventSource[]>([])
+  const selectedSourceId = ref('oplev-esbjerg')
   const crawlerStatus = ref<OplevEsbjergCrawlerStatus | null>(null)
   const activeStatus = ref<CrawledEventCandidateStatus>('new')
   const approvalCandidate = ref<CrawledEventCandidate | null>(null)
@@ -106,9 +110,22 @@ export function useAdminCrawlerCandidates() {
     statusError.value = ''
 
     try {
-      crawlerStatus.value = await fetchOplevEsbjergCrawlerStatus()
+      crawlerStatus.value = await fetchOplevEsbjergCrawlerStatus(selectedSourceId.value)
     } catch (error) {
       statusError.value = error instanceof Error ? error.message : 'Importstatus kunne ikke hentes.'
+    }
+  }
+
+  async function loadCrawlerSources(): Promise<void> {
+    try {
+      crawlerSources.value = await fetchCrawlerEventSources()
+
+      if (!crawlerSources.value.some((source) => source.id === selectedSourceId.value)) {
+        selectedSourceId.value = crawlerSources.value[0]?.id ?? ''
+      }
+    } catch {
+      // The current default source remains usable if source metadata is
+      // temporarily unavailable.
     }
   }
 
@@ -118,7 +135,7 @@ export function useAdminCrawlerCandidates() {
 
     try {
       const [loadedCandidates] = await Promise.all([
-        fetchOplevEsbjergEventCandidates(activeStatus.value),
+        fetchOplevEsbjergEventCandidates(activeStatus.value, selectedSourceId.value),
         loadCrawlerStatus(),
       ])
       candidates.value = loadedCandidates
@@ -136,7 +153,7 @@ export function useAdminCrawlerCandidates() {
     successMessage.value = ''
 
     try {
-      const result = await crawlOplevEsbjergEvents()
+      const result = await crawlOplevEsbjergEvents(selectedSourceId.value)
       successMessage.value = `Importen er færdig: ${result.persistence.inserted} nye og ${result.persistence.updated} opdaterede kandidater.`
       await loadCandidates()
     } catch (error) {
@@ -150,6 +167,14 @@ export function useAdminCrawlerCandidates() {
     if (activeStatus.value === status) return
 
     activeStatus.value = status
+    await loadCandidates()
+  }
+
+  async function setSelectedSource(sourceId: string): Promise<void> {
+    if (!sourceId || sourceId === selectedSourceId.value) return
+
+    selectedSourceId.value = sourceId
+    closeApproval()
     await loadCandidates()
   }
 
@@ -192,7 +217,11 @@ export function useAdminCrawlerCandidates() {
     errorMessage.value = ''
 
     try {
-      await approveOplevEsbjergEventCandidate(approvalCandidate.value._id, approvalForm.value)
+      await approveOplevEsbjergEventCandidate(
+        approvalCandidate.value._id,
+        approvalForm.value,
+        selectedSourceId.value,
+      )
       candidates.value = candidates.value.filter(
         (candidate) => candidate._id !== approvalCandidate.value?._id,
       )
@@ -212,7 +241,7 @@ export function useAdminCrawlerCandidates() {
     successMessage.value = ''
 
     try {
-      await rejectOplevEsbjergEventCandidate(id, reason)
+      await rejectOplevEsbjergEventCandidate(id, reason, selectedSourceId.value)
       candidates.value = candidates.value.filter((candidate) => candidate._id !== id)
       successMessage.value = 'Eventkandidaten er afvist.'
     } catch (error) {
@@ -222,12 +251,14 @@ export function useAdminCrawlerCandidates() {
     }
   }
 
-  onMounted(() => {
-    void loadCandidates()
+  onMounted(async () => {
+    await loadCrawlerSources()
+    await loadCandidates()
   })
 
   return {
     candidates,
+    crawlerSources,
     crawlerStatus,
     activeStatus,
     approvalCandidate,
@@ -243,6 +274,8 @@ export function useAdminCrawlerCandidates() {
     openApproval,
     rejectCandidate,
     runCrawler,
+    selectedSourceId,
+    setSelectedSource,
     statusError,
     setActiveStatus,
     successMessage,

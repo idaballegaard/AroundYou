@@ -7,6 +7,16 @@
         <p class="mt-1 text-sm text-slate-600">Rå events fra Oplev Esbjerg, som endnu ikke er gennemgået.</p>
       </div>
       <div class="flex flex-wrap gap-2">
+        <label v-if="crawlerSources.length > 1" class="sr-only" for="crawler-source">Eventkilde</label>
+        <select
+          v-if="crawlerSources.length > 1"
+          id="crawler-source"
+          :value="selectedSourceId"
+          class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-700"
+          @change="setSelectedSource(($event.target as HTMLSelectElement).value)"
+        >
+          <option v-for="source in crawlerSources" :key="source.id" :value="source.id">{{ source.label }}</option>
+        </select>
         <button
           class="rounded-md border border-slate-300 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           :disabled="isLoading || isCrawling"
@@ -139,6 +149,7 @@ const {
   approvalForm,
   approveCandidate,
   candidates,
+  crawlerSources,
   crawlerStatus,
   closeApproval,
   errorMessage,
@@ -149,6 +160,8 @@ const {
   openApproval,
   rejectCandidate,
   runCrawler,
+  selectedSourceId,
+  setSelectedSource,
   setActiveStatus,
   statusError,
   successMessage,

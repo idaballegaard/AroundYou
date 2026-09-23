@@ -26,8 +26,15 @@ export async function importOplevEsbjergEventCandidates(limit?: number) {
 export async function getOplevEsbjergEventCandidates(
   status: CrawledEventCandidateStatus = "new",
 ) {
+  return getCrawledEventCandidates(OPLEV_ESBJERG_EVENT_SOURCE, status);
+}
+
+export async function getCrawledEventCandidates(
+  source: string,
+  status: CrawledEventCandidateStatus = "new",
+) {
   return CrawledEventCandidateModel.find({
-    source: OPLEV_ESBJERG_EVENT_SOURCE,
+    source,
     status,
   })
     .sort({ crawledAt: -1, createdAt: -1 })
@@ -39,10 +46,11 @@ export async function approveCrawledEventCandidate(
   id: string,
   payload: Record<string, unknown>,
   reviewedBy?: string,
+  source = OPLEV_ESBJERG_EVENT_SOURCE,
 ) {
   const candidate = await CrawledEventCandidateModel.findOne({
     _id: id,
-    source: OPLEV_ESBJERG_EVENT_SOURCE,
+    source,
   });
 
   if (!candidate) {
@@ -83,10 +91,11 @@ export async function rejectCrawledEventCandidate(
   id: string,
   reviewedBy?: string,
   rejectionReason?: string,
+  source = OPLEV_ESBJERG_EVENT_SOURCE,
 ) {
   const candidate = await CrawledEventCandidateModel.findOne({
     _id: id,
-    source: OPLEV_ESBJERG_EVENT_SOURCE,
+    source,
   });
 
   if (!candidate) {

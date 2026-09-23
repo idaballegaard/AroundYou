@@ -1,10 +1,16 @@
 import { Router } from "express";
 import {
   approveOplevEsbjergEventCandidate,
+  approveCrawlerEventCandidate,
+  crawlCrawlerEventCalendar,
   crawlOplevEsbjergEventCalendar,
+  getCrawlerEventCandidates,
+  getCrawlerEventImportStatus,
+  getCrawlerEventSources,
   getOplevEsbjergEventImportStatus,
   getOplevEsbjergEventCandidates,
   rejectOplevEsbjergEventCandidate,
+  rejectCrawlerEventCandidate,
   crawlWebsite,
 } from "../controllers/webCrawlerController";
 import { adminMutationRateLimiter } from "../middleware/rateLimit";
@@ -40,6 +46,57 @@ router.get(
   requireAdmin,
   requirePermission("admin:access"),
   getOplevEsbjergEventImportStatus,
+);
+
+router.get(
+  "/admin/crawler/sources",
+  verifyToken,
+  requireAdmin,
+  requirePermission("admin:access"),
+  getCrawlerEventSources,
+);
+
+router.post(
+  "/admin/crawler/events",
+  verifyToken,
+  requireAdmin,
+  requirePermission("admin:access"),
+  adminMutationRateLimiter,
+  crawlCrawlerEventCalendar,
+);
+
+router.get(
+  "/admin/crawler/events",
+  verifyToken,
+  requireAdmin,
+  requirePermission("admin:access"),
+  getCrawlerEventCandidates,
+);
+
+router.get(
+  "/admin/crawler/status",
+  verifyToken,
+  requireAdmin,
+  requirePermission("admin:access"),
+  getCrawlerEventImportStatus,
+);
+
+router.post(
+  "/admin/crawler/events/:id/approve",
+  verifyToken,
+  requireAdmin,
+  requirePermission("admin:access"),
+  adminMutationRateLimiter,
+  approveCrawlerEventCandidate,
+);
+
+router.post(
+  "/admin/crawler/events/:id/reject",
+  verifyToken,
+  requireAdmin,
+  requirePermission("admin:access"),
+  adminMutationRateLimiter,
+  rejectCrawlerEventCandidate,
 );
 
 router.post(
