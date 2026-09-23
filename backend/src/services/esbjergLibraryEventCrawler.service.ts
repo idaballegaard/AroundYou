@@ -4,7 +4,8 @@ import { CrawledEventCandidateInput, saveCrawledEventCandidates } from "./crawle
 
 export const ESBJERG_LIBRARY_EVENT_SOURCE = "Esbjerg Kommunes Biblioteker arrangementer";
 export const ESBJERG_LIBRARY_EVENT_CALENDAR_URL = "https://www.esbjergbibliotek.dk/arrangementer";
-const MAX_EVENTS_PER_CRAWL = 25;
+const EVENTS_PER_PAGE = 25;
+const MAX_EVENTS_PER_CRAWL = 100;
 
 export type EsbjergLibraryEventCrawl = {
   source: string;
@@ -34,6 +35,47 @@ function parseDateRange(value: string): { startDate: string; endDate: string } {
     match ? `${match[1]}T${match[2]}:${match[3]}` : "";
 
   return { startDate: format(moments[0]), endDate: format(moments[1]) };
+}
+
+function getEventCount(html: string): number {
+  const $ = load(html);
+  const resultText = normalizeText($(".result-pager__title").text());
+  const match = resultText.match(/ud af (\d+) resultater/i);
+
+  return match ? Number(match[1]) : 0;
+}
+
+function getPageUrl(page: number): string {
+  return page === 0 ? ESBJERG_LIBRARY_EVENT_CALENDAR_URL : `${ESBJERG_LIBRARY_EVENT_CALENDAR_URL}?page=${page}`;
+}
+
+async function crawlEventPages(urls: string[]): Promise<string[]> {
+  const htmlPages: string[] = [];
+  let failureMessage = "Bibliotekets arrangementsside kunne ikke crawles.";
+  const crawler = new HttpCrawler(
+    {
+      maxConcurrency: 1,
+      maxRequestRetries: 0,
+      maxRequestsPerCrawl: urls.length,
+      requestHandlerTimeoutSecs: 20,
+      useSessionPool: false,
+      async requestHandler({ body }) {
+        htmlPages.push(body.toString());
+      },
+      failedRequestHandler(_context, error) {
+        failureMessage = error instanceof Error ? error.message : failureMessage;
+      },
+    },
+    new Configuration({ persistStorage: false }),
+  );
+
+  await crawler.run(urls);
+
+  if (!htmlPages.length) {
+    throw new EsbjergLibraryEventCrawlerError(failureMessage);
+  }
+
+  return htmlPages;
 }
 
 export function parseEsbjergLibraryEvents(html: string): CrawledEventCandidateInput[] {
@@ -73,36 +115,25 @@ export function parseEsbjergLibraryEvents(html: string): CrawledEventCandidateIn
 export async function crawlEsbjergLibraryEvents(
   limit = MAX_EVENTS_PER_CRAWL,
 ): Promise<EsbjergLibraryEventCrawl> {
-  let html = "";
-  let failureMessage = "Bibliotekets arrangementsside kunne ikke crawles.";
-  const crawler = new HttpCrawler(
-    {
-      maxConcurrency: 1,
-      maxRequestRetries: 0,
-      maxRequestsPerCrawl: 1,
-      requestHandlerTimeoutSecs: 20,
-      useSessionPool: false,
-      async requestHandler({ body }) {
-        html = body.toString();
-      },
-      failedRequestHandler(_context, error) {
-        failureMessage = error instanceof Error ? error.message : failureMessage;
-      },
-    },
-    new Configuration({ persistStorage: false }),
+  const requestedLimit = Math.min(Math.max(limit, 1), MAX_EVENTS_PER_CRAWL);
+  const firstPage = (await crawlEventPages([getPageUrl(0)]))[0];
+  const eventCount = getEventCount(firstPage);
+  const pageCount = Math.max(
+    1,
+    Math.ceil(Math.min(eventCount || EVENTS_PER_PAGE, requestedLimit) / EVENTS_PER_PAGE),
   );
-
-  await crawler.run([ESBJERG_LIBRARY_EVENT_CALENDAR_URL]);
-
-  if (!html) {
-    throw new EsbjergLibraryEventCrawlerError(failureMessage);
-  }
+  // The site's "Vis flere" pages are cumulative: page 2 includes the events
+  // from pages 0 and 1. Fetching the final needed page avoids duplicates while
+  // still collecting the complete upcoming result set.
+  const resultPage = pageCount > 1
+    ? (await crawlEventPages([getPageUrl(pageCount - 1)]))[0]
+    : firstPage;
 
   return {
     source: ESBJERG_LIBRARY_EVENT_SOURCE,
     sourceUrl: ESBJERG_LIBRARY_EVENT_CALENDAR_URL,
     crawledAt: new Date().toISOString(),
-    events: parseEsbjergLibraryEvents(html).slice(0, Math.max(1, limit)),
+    events: parseEsbjergLibraryEvents(resultPage).slice(0, requestedLimit),
   };
 }
 
