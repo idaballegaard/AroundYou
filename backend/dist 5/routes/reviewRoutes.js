@@ -1,0 +1,20 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const reviewController_1 = require("../controllers/reviewController");
+const reviewReportController_1 = require("../controllers/reviewReportController");
+const rateLimit_1 = require("../middleware/rateLimit");
+const requirePermission_1 = require("../middleware/requirePermission");
+const verifyUserToken_1 = require("../middleware/verifyUserToken");
+const router = (0, express_1.Router)();
+router.post("/reviews", verifyUserToken_1.verifyToken, rateLimit_1.reviewRateLimiter, (0, requirePermission_1.requirePermission)("review:create"), reviewController_1.createReview);
+router.get("/reviews/target/:targetId", reviewController_1.getReviewsByTarget);
+router.post("/reviews/:id/like", verifyUserToken_1.verifyToken, rateLimit_1.reviewRateLimiter, reviewController_1.likeReview);
+router.post("/reviews/:id/report", verifyUserToken_1.verifyToken, rateLimit_1.reviewRateLimiter, reviewReportController_1.reportReview);
+router.patch("/reviews/:id", verifyUserToken_1.verifyToken, rateLimit_1.reviewRateLimiter, reviewController_1.editReview);
+router.get("/reviews", reviewController_1.getAllReviews);
+router.get("/reviews/:id", reviewController_1.getReviewById);
+router.put("/reviews/:id", verifyUserToken_1.verifyToken, rateLimit_1.reviewRateLimiter, (0, requirePermission_1.requirePermission)("review:update"), reviewController_1.updateReviewById);
+router.delete("/reviews/:id", verifyUserToken_1.verifyToken, rateLimit_1.reviewRateLimiter, (0, requirePermission_1.requirePermission)("review:delete"), reviewController_1.deleteReviewById);
+exports.default = router;
+//# sourceMappingURL=reviewRoutes.js.map

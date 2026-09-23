@@ -6,6 +6,7 @@ import routes from "./routes/routes";
 import { setupDocs } from "./utils/swaggerDocumentation";
 import { connectDB } from "./repository/database";
 import { ensureDefaultAdminUser } from "./services/admin.service";
+import { startOplevEsbjergImportScheduler } from "./services/oplevEsbjergImportScheduler.service";
 
 dotenvFlow.config();
 
@@ -93,6 +94,7 @@ export async function startServer() {
   // and health checks do not hit a partially initialized API.
   await connectDB();
   await ensureDefaultAdminUser();
+  startOplevEsbjergImportScheduler();
 
   const PORT: number = Number(process.env.PORT as string) || 4000;
 

@@ -8,8 +8,8 @@ import {
   approveCrawledEventCandidate,
   CrawledEventCandidateReviewError,
   getOplevEsbjergEventCandidates as findOplevEsbjergEventCandidates,
+  importOplevEsbjergEventCandidates,
   rejectCrawledEventCandidate,
-  saveCrawledEventCandidates,
 } from "../services/crawledEventCandidate.service";
 import { getRouteParam, isValidationError } from "./controllerUtils";
 import { CrawledEventCandidateStatus } from "../interfaces/crawledEventCandidate";
@@ -47,14 +47,7 @@ export async function crawlOplevEsbjergEventCalendar(
   res: Response,
 ): Promise<void> {
   try {
-    const crawl = await crawlOplevEsbjergEvents(parseLimit(req.query.limit));
-    const persistence = await saveCrawledEventCandidates(
-      crawl.source,
-      crawl.events,
-      crawl.crawledAt,
-    );
-
-    res.status(200).json({ ...crawl, persistence });
+    res.status(200).json(await importOplevEsbjergEventCandidates(parseLimit(req.query.limit)));
   } catch (error) {
     if (error instanceof OplevEsbjergEventCrawlerError) {
       res.status(502).json({ message: error.message });

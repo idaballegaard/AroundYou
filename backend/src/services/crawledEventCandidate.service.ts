@@ -2,6 +2,7 @@ import { CrawledEventCandidateStatus } from "../interfaces/crawledEventCandidate
 import { CrawledEventCandidateModel } from "../models/crawledEventCandidateModel";
 import { createEventRecord } from "./event.service";
 import {
+  crawlOplevEsbjergEvents,
   OPLEV_ESBJERG_EVENT_SOURCE,
   OplevEsbjergEventCandidate,
 } from "./oplevEsbjergEventCrawler.service";
@@ -10,6 +11,17 @@ export type CrawledEventCandidatePersistence = {
   inserted: number;
   updated: number;
 };
+
+export async function importOplevEsbjergEventCandidates(limit?: number) {
+  const crawl = await crawlOplevEsbjergEvents(limit);
+  const persistence = await saveCrawledEventCandidates(
+    crawl.source,
+    crawl.events,
+    crawl.crawledAt,
+  );
+
+  return { ...crawl, persistence };
+}
 
 export async function getOplevEsbjergEventCandidates(
   status: CrawledEventCandidateStatus = "new",
