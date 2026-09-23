@@ -4,11 +4,13 @@ import { getGeocodedCoordinates } from '@/api/geocoding.api'
 import {
   approveOplevEsbjergEventCandidate,
   crawlOplevEsbjergEvents,
+  fetchOplevEsbjergCrawlerStatus,
   fetchOplevEsbjergEventCandidates,
   rejectOplevEsbjergEventCandidate,
   type CrawledEventApprovalPayload,
   type CrawledEventCandidate,
   type CrawledEventCandidateStatus,
+  type OplevEsbjergCrawlerStatus,
 } from '@/api/crawledEventCandidates.api'
 
 const danishMonths: Record<string, string> = {
@@ -88,6 +90,7 @@ function createApprovalForm(candidate: CrawledEventCandidate): CrawledEventAppro
 
 export function useAdminCrawlerCandidates() {
   const candidates = ref<CrawledEventCandidate[]>([])
+  const crawlerStatus = ref<OplevEsbjergCrawlerStatus | null>(null)
   const activeStatus = ref<CrawledEventCandidateStatus>('new')
   const approvalCandidate = ref<CrawledEventCandidate | null>(null)
   const approvalForm = ref<CrawledEventApprovalPayload | null>(null)
@@ -97,13 +100,28 @@ export function useAdminCrawlerCandidates() {
   const isGeocoding = ref(false)
   const isLoading = ref(false)
   const successMessage = ref('')
+  const statusError = ref('')
+
+  async function loadCrawlerStatus(): Promise<void> {
+    statusError.value = ''
+
+    try {
+      crawlerStatus.value = await fetchOplevEsbjergCrawlerStatus()
+    } catch (error) {
+      statusError.value = error instanceof Error ? error.message : 'Importstatus kunne ikke hentes.'
+    }
+  }
 
   async function loadCandidates(): Promise<void> {
     isLoading.value = true
     errorMessage.value = ''
 
     try {
-      candidates.value = await fetchOplevEsbjergEventCandidates(activeStatus.value)
+      const [loadedCandidates] = await Promise.all([
+        fetchOplevEsbjergEventCandidates(activeStatus.value),
+        loadCrawlerStatus(),
+      ])
+      candidates.value = loadedCandidates
     } catch (error) {
       errorMessage.value =
         error instanceof Error ? error.message : 'Eventkandidaterne kunne ikke hentes.'
@@ -210,6 +228,7 @@ export function useAdminCrawlerCandidates() {
 
   return {
     candidates,
+    crawlerStatus,
     activeStatus,
     approvalCandidate,
     approvalForm,
@@ -224,6 +243,7 @@ export function useAdminCrawlerCandidates() {
     openApproval,
     rejectCandidate,
     runCrawler,
+    statusError,
     setActiveStatus,
     successMessage,
   }

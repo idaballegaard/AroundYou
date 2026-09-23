@@ -25,6 +25,31 @@
       </div>
     </div>
 
+    <div class="mt-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700">
+      <p class="font-black text-[#094b7b]">Importstatus</p>
+      <template v-if="crawlerStatus">
+        <p v-if="crawlerStatus.lastRun" class="mt-1">
+          Seneste import: {{ formatDate(crawlerStatus.lastRun.finishedAt || crawlerStatus.lastRun.startedAt) }}
+          <span class="text-slate-500">· {{ crawlerStatus.lastRun.trigger === 'scheduled' ? 'Automatisk' : 'Manuel' }}</span>
+          <span v-if="crawlerStatus.lastRun.status === 'succeeded'" class="font-semibold text-emerald-700">
+            · Gennemført: {{ crawlerStatus.lastRun.inserted }} nye, {{ crawlerStatus.lastRun.updated }} opdaterede
+          </span>
+          <span v-else-if="crawlerStatus.lastRun.status === 'failed'" class="font-semibold text-rose-700">
+            · Mislykkedes{{ crawlerStatus.lastRun.errorMessage ? `: ${crawlerStatus.lastRun.errorMessage}` : '' }}
+          </span>
+          <span v-else class="font-semibold text-amber-700">· Kører</span>
+        </p>
+        <p v-else class="mt-1 text-slate-500">Der er endnu ikke gennemført en import.</p>
+        <p class="mt-1 text-slate-500">
+          {{ crawlerStatus.dailyImportEnabled && crawlerStatus.nextImportAt
+            ? `Næste automatiske import: ${formatDate(crawlerStatus.nextImportAt)}`
+            : 'Automatisk import er deaktiveret.' }}
+        </p>
+      </template>
+      <p v-else class="mt-1 text-slate-500">Henter importstatus...</p>
+      <p v-if="statusError" class="mt-1 font-semibold text-rose-700">{{ statusError }}</p>
+    </div>
+
     <div class="mt-4 flex gap-2 overflow-x-auto border-b border-slate-200">
       <button
         v-for="tab in statusTabs"
@@ -114,6 +139,7 @@ const {
   approvalForm,
   approveCandidate,
   candidates,
+  crawlerStatus,
   closeApproval,
   errorMessage,
   isCrawling,
@@ -124,6 +150,7 @@ const {
   rejectCandidate,
   runCrawler,
   setActiveStatus,
+  statusError,
   successMessage,
 } = useAdminCrawlerCandidates()
 
@@ -132,4 +159,11 @@ const statusTabs = [
   { status: 'approved', label: 'Godkendte' },
   { status: 'rejected', label: 'Afviste' },
 ] as const
+
+function formatDate(value: string): string {
+  return new Date(value).toLocaleString('da-DK', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  })
+}
 </script>

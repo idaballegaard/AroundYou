@@ -1,16 +1,23 @@
 import { Request, Response } from "express";
 import { crawlPage, WebCrawlerError } from "../services/webCrawler.service";
 import {
-  crawlOplevEsbjergEvents,
   OplevEsbjergEventCrawlerError,
 } from "../services/oplevEsbjergEventCrawler.service";
 import {
   approveCrawledEventCandidate,
   CrawledEventCandidateReviewError,
   getOplevEsbjergEventCandidates as findOplevEsbjergEventCandidates,
-  importOplevEsbjergEventCandidates,
   rejectCrawledEventCandidate,
 } from "../services/crawledEventCandidate.service";
+import {
+  getLatestOplevEsbjergEventImportRun,
+  runOplevEsbjergEventImport,
+} from "../services/crawlerImportRun.service";
+import {
+  getNextOplevEsbjergImportTime,
+  getOplevEsbjergDailyImportHour,
+  isOplevEsbjergDailyImportEnabled,
+} from "../services/oplevEsbjergImportScheduler.service";
 import { getRouteParam, isValidationError } from "./controllerUtils";
 import { CrawledEventCandidateStatus } from "../interfaces/crawledEventCandidate";
 
@@ -47,7 +54,7 @@ export async function crawlOplevEsbjergEventCalendar(
   res: Response,
 ): Promise<void> {
   try {
-    res.status(200).json(await importOplevEsbjergEventCandidates(parseLimit(req.query.limit)));
+    res.status(200).json(await runOplevEsbjergEventImport("manual", parseLimit(req.query.limit)));
   } catch (error) {
     if (error instanceof OplevEsbjergEventCrawlerError) {
       res.status(502).json({ message: error.message });
@@ -56,6 +63,24 @@ export async function crawlOplevEsbjergEventCalendar(
 
     console.error("Oplev Esbjerg event crawl failed:", error);
     res.status(502).json({ message: "Eventkalenderen kunne ikke crawles." });
+  }
+}
+
+export async function getOplevEsbjergEventImportStatus(
+  _req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const nextImport = getNextOplevEsbjergImportTime();
+    res.status(200).json({
+      dailyImportEnabled: isOplevEsbjergDailyImportEnabled(),
+      dailyImportHour: getOplevEsbjergDailyImportHour(),
+      nextImportAt: nextImport?.toISOString() ?? null,
+      lastRun: await getLatestOplevEsbjergEventImportRun(),
+    });
+  } catch (error) {
+    console.error("Could not fetch Oplev Esbjerg import status:", error);
+    res.status(500).json({ message: "Importstatus kunne ikke hentes." });
   }
 }
 

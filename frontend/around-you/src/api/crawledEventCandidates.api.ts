@@ -30,6 +30,24 @@ export type CrawlOplevEsbjergEventsResponse = {
   }
 }
 
+export type CrawlerImportRun = {
+  trigger: 'manual' | 'scheduled'
+  status: 'running' | 'succeeded' | 'failed'
+  startedAt: string
+  finishedAt?: string
+  eventCount: number
+  inserted: number
+  updated: number
+  errorMessage?: string
+}
+
+export type OplevEsbjergCrawlerStatus = {
+  dailyImportEnabled: boolean
+  dailyImportHour: number
+  nextImportAt: string | null
+  lastRun: CrawlerImportRun | null
+}
+
 export type CrawledEventApprovalPayload = {
   name: string
   description: string
@@ -59,6 +77,12 @@ export function fetchOplevEsbjergEventCandidates(
 export function crawlOplevEsbjergEvents(): Promise<CrawlOplevEsbjergEventsResponse> {
   return apiRequest<CrawlOplevEsbjergEventsResponse>('/admin/crawler/oplev-esbjerg/events', {
     method: 'POST',
+    token: getAuthToken(),
+  })
+}
+
+export function fetchOplevEsbjergCrawlerStatus(): Promise<OplevEsbjergCrawlerStatus> {
+  return apiRequest<OplevEsbjergCrawlerStatus>('/admin/crawler/oplev-esbjerg/status', {
     token: getAuthToken(),
   })
 }

@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   approveOplevEsbjergEventCandidate,
   crawlOplevEsbjergEventCalendar,
+  getOplevEsbjergEventImportStatus,
   getOplevEsbjergEventCandidates,
   rejectOplevEsbjergEventCandidate,
   crawlWebsite,
@@ -31,6 +32,14 @@ router.get(
   requireAdmin,
   requirePermission("admin:access"),
   getOplevEsbjergEventCandidates,
+);
+
+router.get(
+  "/admin/crawler/oplev-esbjerg/status",
+  verifyToken,
+  requireAdmin,
+  requirePermission("admin:access"),
+  getOplevEsbjergEventImportStatus,
 );
 
 router.post(

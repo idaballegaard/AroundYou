@@ -1,4 +1,4 @@
-import { importOplevEsbjergEventCandidates } from "./crawledEventCandidate.service";
+import { runOplevEsbjergEventImport } from "./crawlerImportRun.service";
 
 const COPENHAGEN_TIME_ZONE = "Europe/Copenhagen";
 const DEFAULT_IMPORT_HOUR = 6;
@@ -6,12 +6,12 @@ const DEFAULT_IMPORT_HOUR = 6;
 let scheduledImport: NodeJS.Timeout | undefined;
 let importInProgress = false;
 
-function isDailyImportEnabled(): boolean {
+export function isOplevEsbjergDailyImportEnabled(): boolean {
   const value = process.env.CRAWLER_DAILY_IMPORT_ENABLED?.trim().toLowerCase();
   return value !== "false" && value !== "0";
 }
 
-function getImportHour(): number {
+export function getOplevEsbjergDailyImportHour(): number {
   const configuredHour = Number(process.env.CRAWLER_DAILY_IMPORT_HOUR);
 
   return Number.isInteger(configuredHour) && configuredHour >= 0 && configuredHour <= 23
@@ -45,7 +45,7 @@ function getNextImportTime(now = new Date()): Date {
   }).formatToParts(now);
   const part = (type: Intl.DateTimeFormatPartTypes) =>
     Number(localParts.find((current) => current.type === type)?.value);
-  const importHour = getImportHour();
+  const importHour = getOplevEsbjergDailyImportHour();
   let localDateAtImportHour = new Date(
     Date.UTC(part("year"), part("month") - 1, part("day"), importHour),
   );
@@ -61,6 +61,10 @@ function getNextImportTime(now = new Date()): Date {
   }
 
   return nextImport;
+}
+
+export function getNextOplevEsbjergImportTime(): Date | null {
+  return isOplevEsbjergDailyImportEnabled() ? getNextImportTime() : null;
 }
 
 function scheduleNextImport(): void {
@@ -87,7 +91,7 @@ async function runScheduledImport(): Promise<void> {
   importInProgress = true;
 
   try {
-    const result = await importOplevEsbjergEventCandidates();
+    const result = await runOplevEsbjergEventImport("scheduled");
     console.log(
       `Scheduled Oplev Esbjerg import completed: ${result.persistence.inserted} new and ${result.persistence.updated} updated candidates.`,
     );
@@ -100,7 +104,7 @@ async function runScheduledImport(): Promise<void> {
 }
 
 export function startOplevEsbjergImportScheduler(): void {
-  if (!isDailyImportEnabled()) {
+  if (!isOplevEsbjergDailyImportEnabled()) {
     console.log("Daily Oplev Esbjerg event import is disabled.");
     return;
   }
