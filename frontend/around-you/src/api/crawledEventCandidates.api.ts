@@ -53,6 +53,8 @@ export type OplevEsbjergCrawlerStatus = {
 export type CrawlerEventSource = {
   id: string
   label: string
+  sourceUrl: string
+  status: 'active' | 'planned'
   supportsScheduledImport: boolean
 }
 

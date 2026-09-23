@@ -12,6 +12,13 @@ export class CrawlerSourceNotFoundError extends Error {
   }
 }
 
+export class CrawlerSourceNotReadyError extends Error {
+  constructor() {
+    super("Denne crawlerkilde er registreret, men endnu ikke klar til import.");
+    this.name = "CrawlerSourceNotReadyError";
+  }
+}
+
 export async function runCrawlerEventImport(
   sourceId: string,
   trigger: CrawlerImportTrigger,
@@ -21,6 +28,10 @@ export async function runCrawlerEventImport(
 
   if (!source) {
     throw new CrawlerSourceNotFoundError();
+  }
+
+  if (source.status !== "active" || !source.importCandidates) {
+    throw new CrawlerSourceNotReadyError();
   }
 
   const run = await CrawlerImportRunModel.create({

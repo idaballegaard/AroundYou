@@ -15,7 +15,9 @@
           class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-700"
           @change="setSelectedSource(($event.target as HTMLSelectElement).value)"
         >
-          <option v-for="source in crawlerSources" :key="source.id" :value="source.id">{{ source.label }}</option>
+          <option v-for="source in crawlerSources" :key="source.id" :value="source.id" :disabled="source.status !== 'active'">
+            {{ source.label }}{{ source.status === 'planned' ? ' (kommer snart)' : '' }}
+          </option>
         </select>
         <button
           class="rounded-md border border-slate-300 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"

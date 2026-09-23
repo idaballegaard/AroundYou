@@ -13,6 +13,7 @@ import {
 import {
   getLatestOplevEsbjergEventImportRun,
   CrawlerSourceNotFoundError,
+  CrawlerSourceNotReadyError,
   getLatestCrawlerEventImportRun,
   runCrawlerEventImport,
   runOplevEsbjergEventImport,
@@ -118,6 +119,11 @@ export async function crawlCrawlerEventCalendar(req: Request, res: Response): Pr
   } catch (error) {
     if (error instanceof CrawlerSourceNotFoundError) {
       res.status(404).json({ message: error.message });
+      return;
+    }
+
+    if (error instanceof CrawlerSourceNotReadyError) {
+      res.status(409).json({ message: error.message });
       return;
     }
 
