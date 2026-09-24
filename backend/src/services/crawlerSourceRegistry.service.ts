@@ -33,7 +33,7 @@ const crawlerEventSources: CrawlerEventSource[] = [
     sourceUrl: "https://www.esbjergbibliotek.dk/arrangementer",
     candidateSource: "Esbjerg Kommunes Biblioteker arrangementer",
     status: "active",
-    supportsScheduledImport: false,
+    supportsScheduledImport: true,
     importCandidates: importEsbjergLibraryEventCandidates,
   },
   {
@@ -66,4 +66,10 @@ export function getCrawlerEventSources() {
     status,
     supportsScheduledImport,
   }));
+}
+
+export function getScheduledCrawlerEventSources(): CrawlerEventSource[] {
+  return crawlerEventSources.filter(
+    (source) => source.status === "active" && source.supportsScheduledImport && source.importCandidates,
+  );
 }

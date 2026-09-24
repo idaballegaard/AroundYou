@@ -1,4 +1,5 @@
-import { runOplevEsbjergEventImport } from "./crawlerImportRun.service";
+import { runCrawlerEventImport } from "./crawlerImportRun.service";
+import { getScheduledCrawlerEventSources } from "./crawlerSourceRegistry.service";
 
 const COPENHAGEN_TIME_ZONE = "Europe/Copenhagen";
 const DEFAULT_IMPORT_HOUR = 6;
@@ -76,7 +77,7 @@ function scheduleNextImport(): void {
   }, delay);
 
   console.log(
-    `Next Oplev Esbjerg event import is scheduled for ${nextImport.toLocaleString("da-DK", {
+    `Next scheduled event imports are planned for ${nextImport.toLocaleString("da-DK", {
       timeZone: COPENHAGEN_TIME_ZONE,
     })}.`,
   );
@@ -91,12 +92,17 @@ async function runScheduledImport(): Promise<void> {
   importInProgress = true;
 
   try {
-    const result = await runOplevEsbjergEventImport("scheduled");
-    console.log(
-      `Scheduled Oplev Esbjerg import completed: ${result.persistence.inserted} new and ${result.persistence.updated} updated candidates.`,
-    );
-  } catch (error) {
-    console.error("Scheduled Oplev Esbjerg import failed:", error);
+    for (const source of getScheduledCrawlerEventSources()) {
+      try {
+        const result = await runCrawlerEventImport(source.id, "scheduled");
+        console.log(
+          `Scheduled ${source.label} import completed: ${result.persistence.inserted} new and ${result.persistence.updated} updated candidates.`,
+        );
+      } catch (error) {
+        // One unavailable source must not prevent other scheduled imports.
+        console.error(`Scheduled ${source.label} import failed:`, error);
+      }
+    }
   } finally {
     importInProgress = false;
     scheduleNextImport();
@@ -105,7 +111,7 @@ async function runScheduledImport(): Promise<void> {
 
 export function startOplevEsbjergImportScheduler(): void {
   if (!isOplevEsbjergDailyImportEnabled()) {
-    console.log("Daily Oplev Esbjerg event import is disabled.");
+    console.log("Daily event imports are disabled.");
     return;
   }
 

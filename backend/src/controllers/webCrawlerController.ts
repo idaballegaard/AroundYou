@@ -165,7 +165,7 @@ export async function getCrawlerEventImportStatus(
   try {
     const sourceId = getRequestedCrawlerSourceId(req.query.source);
     const source = getRequestedCrawlerSource(sourceId);
-    const scheduled = source.supportsScheduledImport && sourceId === OPLEV_ESBJERG_SOURCE_ID;
+    const scheduled = source.supportsScheduledImport;
     const nextImport = scheduled ? getNextOplevEsbjergImportTime() : null;
 
     res.status(200).json({
