@@ -97,9 +97,18 @@
             <div class="flex flex-wrap items-center gap-2">
               <h3 class="font-black text-slate-900">{{ candidate.title }}</h3>
               <span v-if="candidate.category" class="rounded-full bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600">{{ candidate.category }}</span>
+              <span v-if="candidate.possibleDuplicates.length" class="rounded-full bg-amber-100 px-2 py-1 text-xs font-black text-amber-800">Mulig dublet</span>
             </div>
             <p v-if="candidate.description" class="mt-2 text-sm text-slate-700">{{ candidate.description }}</p>
             <p class="mt-2 text-sm text-slate-500">{{ candidate.dateText }}<span v-if="candidate.locationText"> · {{ candidate.locationText }}</span></p>
+            <div v-if="candidate.possibleDuplicates.length" class="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+              <p class="font-bold">Kontrollér før godkendelse</p>
+              <ul class="mt-1 grid gap-1">
+                <li v-for="duplicate in candidate.possibleDuplicates" :key="duplicate._id">
+                  {{ duplicate.status === 'approved' ? 'Allerede godkendt' : 'Ny kandidat' }} fra {{ duplicate.source }}: {{ duplicate.title }}
+                </li>
+              </ul>
+            </div>
             <p v-if="candidate.reviewedAt" class="mt-2 text-xs font-semibold text-slate-500">
               Behandlet {{ new Date(candidate.reviewedAt).toLocaleString('da-DK') }}
               <span v-if="candidate.rejectionReason"> · {{ candidate.rejectionReason }}</span>
@@ -121,6 +130,9 @@
           <div class="sm:col-span-2">
             <h4 class="font-black text-[#094b7b]">Godkend event</h4>
             <p class="mt-1 text-sm text-slate-600">Kildens tidspunkt: {{ candidate.dateText || 'Ikke oplyst' }}</p>
+            <p v-if="candidate.possibleDuplicates.length" class="mt-2 rounded-md bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">
+              Dette ligner et event fra en anden kilde. Kontrollér det, før du publicerer.
+            </p>
           </div>
           <label class="grid gap-1 text-sm font-bold text-slate-700">Navn<input v-model.trim="approvalForm.name" required class="rounded-md border border-slate-300 px-3 py-2 font-normal" /></label>
           <label class="grid gap-1 text-sm font-bold text-slate-700">Pris i kr.<input v-model.number="approvalForm.price" required min="0" step="1" type="number" class="rounded-md border border-slate-300 px-3 py-2 font-normal" /></label>

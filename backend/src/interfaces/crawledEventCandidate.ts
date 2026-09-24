@@ -2,6 +2,15 @@ import { Document } from "mongoose";
 
 export type CrawledEventCandidateStatus = "new" | "approved" | "rejected";
 
+export type CrawledEventCandidatePossibleDuplicate = {
+  _id: string;
+  title: string;
+  source: string;
+  sourceUrl: string;
+  dateText: string;
+  status: "new" | "approved";
+};
+
 // This is deliberately a raw import record, not an Event. A later moderation
 // flow can decide which candidates are complete and trustworthy enough to
 // publish as real AroundYou events.

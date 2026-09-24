@@ -20,6 +20,14 @@ export type CrawledEventCandidate = {
   reviewedAt?: string
   rejectionReason?: string
   crawledAt: string
+  possibleDuplicates: Array<{
+    _id: string
+    title: string
+    source: string
+    sourceUrl: string
+    dateText: string
+    status: 'new' | 'approved'
+  }>
 }
 
 export type CrawlOplevEsbjergEventsResponse = {

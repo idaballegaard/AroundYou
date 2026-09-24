@@ -1,4 +1,7 @@
-import { CrawledEventCandidateStatus } from "../interfaces/crawledEventCandidate";
+import {
+  CrawledEventCandidatePossibleDuplicate,
+  CrawledEventCandidateStatus,
+} from "../interfaces/crawledEventCandidate";
 import { CrawledEventCandidateModel } from "../models/crawledEventCandidateModel";
 import { createEventRecord } from "./event.service";
 import {
@@ -46,13 +49,65 @@ export async function getCrawledEventCandidates(
   source: string,
   status: CrawledEventCandidateStatus = "new",
 ) {
-  return CrawledEventCandidateModel.find({
+  const candidates = await CrawledEventCandidateModel.find({
     source,
     status,
   })
     .sort({ crawledAt: -1, createdAt: -1 })
     .limit(50)
     .lean();
+
+  const candidateDates = [...new Set(candidates.map((candidate) => candidate.startDate.slice(0, 10)).filter(Boolean))];
+  if (!candidateDates.length) {
+    return candidates.map((candidate) => ({ ...candidate, possibleDuplicates: [] }));
+  }
+
+  // A source-specific ID only prevents repeat imports from that same source.
+  // Compare a normalised title and calendar date across the other sources so
+  // moderators can spot likely duplicate events before publishing either one.
+  const otherCandidates = await CrawledEventCandidateModel.find({
+    source: { $ne: source },
+    status: { $in: ["new", "approved"] },
+    $or: candidateDates.map((date) => ({ startDate: new RegExp(`^${date}`) })),
+  })
+    .select("title source sourceUrl dateText startDate status")
+    .lean();
+
+  const duplicatesByFingerprint = new Map<string, CrawledEventCandidatePossibleDuplicate[]>();
+  for (const candidate of otherCandidates) {
+    const fingerprint = getDuplicateFingerprint(candidate.title, candidate.startDate);
+    if (!fingerprint) continue;
+
+    const duplicates = duplicatesByFingerprint.get(fingerprint) ?? [];
+    duplicates.push({
+      _id: candidate._id.toString(),
+      title: candidate.title,
+      source: candidate.source,
+      sourceUrl: candidate.sourceUrl,
+      dateText: candidate.dateText,
+      status: candidate.status as "new" | "approved",
+    });
+    duplicatesByFingerprint.set(fingerprint, duplicates);
+  }
+
+  return candidates.map((candidate) => ({
+    ...candidate,
+    possibleDuplicates: duplicatesByFingerprint.get(
+      getDuplicateFingerprint(candidate.title, candidate.startDate),
+    ) ?? [],
+  }));
+}
+
+function getDuplicateFingerprint(title: string, startDate: string): string {
+  const date = startDate.slice(0, 10);
+  const normalizedTitle = title
+    .toLocaleLowerCase("da-DK")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+  return date && normalizedTitle ? `${date}:${normalizedTitle}` : "";
 }
 
 export async function approveCrawledEventCandidate(
