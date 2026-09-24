@@ -1,5 +1,6 @@
 import { importOplevEsbjergEventCandidates } from "./crawledEventCandidate.service";
 import { importEsbjergLibraryEventCandidates } from "./esbjergLibraryEventCrawler.service";
+import { importEsbjergCityEventCandidates } from "./esbjergCityEventCrawler.service";
 import { OPLEV_ESBJERG_EVENT_SOURCE } from "./oplevEsbjergEventCrawler.service";
 
 export type CrawlerEventSource = {
@@ -41,8 +42,9 @@ const crawlerEventSources: CrawlerEventSource[] = [
     label: "Esbjerg City",
     sourceUrl: "https://www.esbjergcity.dk/det-sker/",
     candidateSource: "Esbjerg City eventkalender",
-    status: "planned",
-    supportsScheduledImport: false,
+    status: "active",
+    supportsScheduledImport: true,
+    importCandidates: importEsbjergCityEventCandidates,
   },
   {
     id: "business-esbjerg",

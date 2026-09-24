@@ -4,6 +4,7 @@ import {
   OplevEsbjergEventCrawlerError,
 } from "../services/oplevEsbjergEventCrawler.service";
 import { EsbjergLibraryEventCrawlerError } from "../services/esbjergLibraryEventCrawler.service";
+import { EsbjergCityEventCrawlerError } from "../services/esbjergCityEventCrawler.service";
 import {
   approveCrawledEventCandidate,
   CrawledEventCandidateReviewError,
@@ -81,7 +82,11 @@ export async function crawlOplevEsbjergEventCalendar(
   try {
     res.status(200).json(await runOplevEsbjergEventImport("manual", parseLimit(req.query.limit)));
   } catch (error) {
-    if (error instanceof OplevEsbjergEventCrawlerError || error instanceof EsbjergLibraryEventCrawlerError) {
+    if (
+      error instanceof OplevEsbjergEventCrawlerError ||
+      error instanceof EsbjergLibraryEventCrawlerError ||
+      error instanceof EsbjergCityEventCrawlerError
+    ) {
       res.status(502).json({ message: error.message });
       return;
     }
