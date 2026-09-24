@@ -9,6 +9,9 @@ export type CrawledEventCandidatePossibleDuplicate = {
   sourceUrl: string;
   dateText: string;
   status: "new" | "approved";
+  matchScore: number;
+  matchConfidence: "Høj" | "Middel" | "Lav";
+  matchReasons: string[];
 };
 
 // This is deliberately a raw import record, not an Event. A later moderation

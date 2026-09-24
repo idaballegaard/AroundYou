@@ -105,6 +105,9 @@
               <p class="font-bold">Kontrollér før godkendelse</p>
               <ul class="mt-1 grid gap-1">
                 <li v-for="duplicate in candidate.possibleDuplicates" :key="duplicate._id">
+                  <span class="font-black">{{ duplicate.matchConfidence }} sandsynlighed ({{ duplicate.matchScore }}%)</span>
+                  · {{ duplicate.matchReasons.join(', ') }}
+                  <br />
                   {{ duplicate.status === 'approved' ? 'Allerede godkendt' : 'Ny kandidat' }} fra {{ duplicate.source }}: {{ duplicate.title }}
                 </li>
               </ul>

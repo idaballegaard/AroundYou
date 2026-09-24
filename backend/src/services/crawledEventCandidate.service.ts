@@ -63,14 +63,15 @@ export async function getCrawledEventCandidates(
   }
 
   // A source-specific ID only prevents repeat imports from that same source.
-  // Compare a normalised title and calendar date across the other sources so
-  // moderators can spot likely duplicate events before publishing either one.
+  // Candidates with the same normalised title and calendar date are scored
+  // with their time and venue details, giving moderators an explainable
+  // cross-source duplicate assessment before publication.
   const otherCandidates = await CrawledEventCandidateModel.find({
     source: { $ne: source },
     status: { $in: ["new", "approved"] },
     $or: candidateDates.map((date) => ({ startDate: new RegExp(`^${date}`) })),
   })
-    .select("title source sourceUrl dateText startDate status")
+    .select("title source sourceUrl dateText startDate locationText addressText status")
     .lean();
 
   const duplicatesByFingerprint = new Map<string, CrawledEventCandidatePossibleDuplicate[]>();
@@ -78,6 +79,12 @@ export async function getCrawledEventCandidates(
     const fingerprint = getDuplicateFingerprint(candidate.title, candidate.startDate);
     if (!fingerprint) continue;
 
+    const currentCandidate = candidates.find(
+      (item) => getDuplicateFingerprint(item.title, item.startDate) === fingerprint,
+    );
+    if (!currentCandidate) continue;
+
+    const duplicateMatch = getDuplicateMatch(currentCandidate, candidate);
     const duplicates = duplicatesByFingerprint.get(fingerprint) ?? [];
     duplicates.push({
       _id: candidate._id.toString(),
@@ -86,28 +93,80 @@ export async function getCrawledEventCandidates(
       sourceUrl: candidate.sourceUrl,
       dateText: candidate.dateText,
       status: candidate.status as "new" | "approved",
+      matchScore: duplicateMatch.matchScore,
+      matchConfidence: duplicateMatch.matchConfidence,
+      matchReasons: duplicateMatch.matchReasons,
     });
     duplicatesByFingerprint.set(fingerprint, duplicates);
   }
 
   return candidates.map((candidate) => ({
     ...candidate,
-    possibleDuplicates: duplicatesByFingerprint.get(
+    possibleDuplicates: (duplicatesByFingerprint.get(
       getDuplicateFingerprint(candidate.title, candidate.startDate),
-    ) ?? [],
+    ) ?? []).sort((first, second) => second.matchScore - first.matchScore),
   }));
+}
+
+type DuplicateComparableCandidate = {
+  title: string;
+  startDate: string;
+  locationText: string;
+  addressText: string;
+};
+
+function getDuplicateMatch(
+  first: DuplicateComparableCandidate,
+  second: DuplicateComparableCandidate,
+): Pick<CrawledEventCandidatePossibleDuplicate, "matchScore" | "matchConfidence" | "matchReasons"> {
+  const reasons = ["Samme titel", "Samme dato"];
+  let score = 75;
+
+  if (getKnownStartTime(first.startDate) && getKnownStartTime(first.startDate) === getKnownStartTime(second.startDate)) {
+    score += 15;
+    reasons.push("Samme starttidspunkt");
+  }
+
+  if (hasSameVenue(first, second)) {
+    score += 10;
+    reasons.push("Samme sted eller adresse");
+  }
+
+  return {
+    matchScore: score,
+    matchConfidence: score >= 90 ? "Høj" : score >= 75 ? "Middel" : "Lav",
+    matchReasons: reasons,
+  };
+}
+
+function getKnownStartTime(startDate: string): string {
+  const time = startDate.match(/T(\d{2}:\d{2})$/)?.[1] ?? "";
+  return time === "00:00" ? "" : time;
+}
+
+function hasSameVenue(first: DuplicateComparableCandidate, second: DuplicateComparableCandidate): boolean {
+  const firstVenue = normalizeMatchText(first.addressText || first.locationText);
+  const secondVenue = normalizeMatchText(second.addressText || second.locationText);
+
+  return firstVenue.length >= 8 && secondVenue.length >= 8 && (
+    firstVenue === secondVenue || firstVenue.includes(secondVenue) || secondVenue.includes(firstVenue)
+  );
 }
 
 function getDuplicateFingerprint(title: string, startDate: string): string {
   const date = startDate.slice(0, 10);
-  const normalizedTitle = title
+  const normalizedTitle = normalizeMatchText(title);
+
+  return date && normalizedTitle ? `${date}:${normalizedTitle}` : "";
+}
+
+function normalizeMatchText(value: string): string {
+  return value
     .toLocaleLowerCase("da-DK")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
-
-  return date && normalizedTitle ? `${date}:${normalizedTitle}` : "";
 }
 
 export async function approveCrawledEventCandidate(

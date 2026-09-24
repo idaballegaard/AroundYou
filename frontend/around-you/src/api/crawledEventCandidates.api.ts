@@ -27,6 +27,9 @@ export type CrawledEventCandidate = {
     sourceUrl: string
     dateText: string
     status: 'new' | 'approved'
+    matchScore: number
+    matchConfidence: 'Høj' | 'Middel' | 'Lav'
+    matchReasons: string[]
   }>
 }
 
