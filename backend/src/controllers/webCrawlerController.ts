@@ -5,6 +5,7 @@ import {
 } from "../services/oplevEsbjergEventCrawler.service";
 import { EsbjergLibraryEventCrawlerError } from "../services/esbjergLibraryEventCrawler.service";
 import { EsbjergCityEventCrawlerError } from "../services/esbjergCityEventCrawler.service";
+import { BusinessEsbjergEventCrawlerError } from "../services/businessEsbjergEventCrawler.service";
 import {
   approveCrawledEventCandidate,
   CrawledEventCandidateReviewError,
@@ -85,7 +86,8 @@ export async function crawlOplevEsbjergEventCalendar(
     if (
       error instanceof OplevEsbjergEventCrawlerError ||
       error instanceof EsbjergLibraryEventCrawlerError ||
-      error instanceof EsbjergCityEventCrawlerError
+      error instanceof EsbjergCityEventCrawlerError ||
+      error instanceof BusinessEsbjergEventCrawlerError
     ) {
       res.status(502).json({ message: error.message });
       return;
@@ -133,7 +135,12 @@ export async function crawlCrawlerEventCalendar(req: Request, res: Response): Pr
       return;
     }
 
-    if (error instanceof OplevEsbjergEventCrawlerError) {
+    if (
+      error instanceof OplevEsbjergEventCrawlerError ||
+      error instanceof EsbjergLibraryEventCrawlerError ||
+      error instanceof EsbjergCityEventCrawlerError ||
+      error instanceof BusinessEsbjergEventCrawlerError
+    ) {
       res.status(502).json({ message: error.message });
       return;
     }
