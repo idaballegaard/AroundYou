@@ -118,6 +118,7 @@
             <a :href="candidate.sourceUrl" target="_blank" rel="noopener noreferrer" class="text-sm font-bold text-[#094b7b] underline underline-offset-2">Se kilde</a>
             <template v-if="activeStatus === 'new'">
               <button type="button" class="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-black text-white disabled:opacity-60" :disabled="Boolean(activeCandidateId)" @click="openApproval(candidate)">Godkend</button>
+              <button v-if="candidate.possibleDuplicates.length" type="button" class="rounded-md border border-amber-500 px-3 py-1.5 text-sm font-black text-amber-900 hover:bg-amber-50 disabled:opacity-60" :disabled="Boolean(activeCandidateId)" @click="rejectCandidateAsDuplicate(candidate)">Afvis som dublet</button>
               <button type="button" class="rounded-md bg-rose-600 px-3 py-1.5 text-sm font-black text-white disabled:opacity-60" :disabled="Boolean(activeCandidateId)" @click="rejectCandidate(candidate._id)">Afvis</button>
             </template>
           </div>
@@ -175,6 +176,7 @@ const {
   loadCandidates,
   openApproval,
   rejectCandidate,
+  rejectCandidateAsDuplicate,
   runCrawler,
   selectedSourceId,
   selectedSourceLabel,

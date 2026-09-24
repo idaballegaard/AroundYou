@@ -237,8 +237,7 @@ export function useAdminCrawlerCandidates() {
     }
   }
 
-  async function rejectCandidate(id: string): Promise<void> {
-    const reason = window.prompt('Hvorfor afvises denne eventkandidat?') ?? ''
+  async function rejectCandidateWithReason(id: string, reason: string, successMessageText: string): Promise<void> {
     activeCandidateId.value = id
     errorMessage.value = ''
     successMessage.value = ''
@@ -246,12 +245,35 @@ export function useAdminCrawlerCandidates() {
     try {
       await rejectOplevEsbjergEventCandidate(id, reason, selectedSourceId.value)
       candidates.value = candidates.value.filter((candidate) => candidate._id !== id)
-      successMessage.value = 'Eventkandidaten er afvist.'
+      successMessage.value = successMessageText
     } catch (error) {
       errorMessage.value = error instanceof Error ? error.message : 'Eventkandidaten kunne ikke afvises.'
     } finally {
       activeCandidateId.value = ''
     }
+  }
+
+  async function rejectCandidate(id: string): Promise<void> {
+    const reason = window.prompt('Hvorfor afvises denne eventkandidat?')
+    if (reason === null) return
+
+    await rejectCandidateWithReason(id, reason, 'Eventkandidaten er afvist.')
+  }
+
+  async function rejectCandidateAsDuplicate(candidate: CrawledEventCandidate): Promise<void> {
+    const duplicate = candidate.possibleDuplicates[0]
+    if (!duplicate) return
+
+    const confirmed = window.confirm(
+      `Afvis "${candidate.title}" som dublet af kandidaten fra ${duplicate.source}?`,
+    )
+    if (!confirmed) return
+
+    await rejectCandidateWithReason(
+      candidate._id,
+      `Afvist som mulig dublet af "${duplicate.title}" fra ${duplicate.source}.`,
+      'Eventkandidaten er afvist som dublet.',
+    )
   }
 
   onMounted(async () => {
@@ -276,6 +298,7 @@ export function useAdminCrawlerCandidates() {
     loadCandidates,
     openApproval,
     rejectCandidate,
+    rejectCandidateAsDuplicate,
     runCrawler,
     selectedSourceId,
     selectedSourceLabel,
