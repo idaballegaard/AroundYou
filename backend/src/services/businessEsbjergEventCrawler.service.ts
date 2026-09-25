@@ -45,6 +45,22 @@ function normalizeText(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
+function extractReadableDescription(html: string): string {
+  const $ = load(html);
+  const description = $(".eventpage__description").first();
+  const blocks = description
+    .find("p, li, h2, h3, h4, h5")
+    .filter((_index, element) => !$(element).parents("p, li").length)
+    .map((_index, element) => normalizeText($(element).text()))
+    .get()
+    .filter(Boolean);
+
+  // The page uses paragraphs, headings and lists for its programme and
+  // practical details. Separating each block prevents text such as
+  // "skolen?Til" when HTML sibling elements are flattened into plain text.
+  return blocks.length ? blocks.join("\n\n") : normalizeText(description.text());
+}
+
 function getApiUrl(page: number): string {
   return page > 1 ? `${BUSINESS_ESBJERG_EVENTS_API_URL}&page=${page}` : BUSINESS_ESBJERG_EVENTS_API_URL;
 }
@@ -135,14 +151,15 @@ async function addEventDetails(
         const sourceId = request.userData.sourceId;
         if (typeof sourceId !== "string") return;
 
-        const $ = load(body.toString());
+        const html = body.toString();
+        const $ = load(html);
         const timeText = normalizeText($(".time-location__time").text());
         const locationText = normalizeText($(".time-location__location").text());
         const { startTime, endTime } = parseTimeRange(timeText);
         const startDate = String(request.userData.startDate ?? "").slice(0, 10);
 
         details.set(sourceId, {
-          description: normalizeText($(".eventpage__description").text()),
+          description: extractReadableDescription(html),
           locationText,
           addressText: locationText,
           dateText: [startDate, timeText].filter(Boolean).join(", "),

@@ -99,7 +99,7 @@
               <span v-if="candidate.category" class="rounded-full bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600">{{ candidate.category }}</span>
               <span v-if="candidate.possibleDuplicates.length" class="rounded-full bg-amber-100 px-2 py-1 text-xs font-black text-amber-800">Mulig dublet</span>
             </div>
-            <p v-if="candidate.description" class="mt-2 text-sm text-slate-700">{{ candidate.description }}</p>
+            <p v-if="candidate.description" class="mt-2 whitespace-pre-line text-sm text-slate-700">{{ candidate.description }}</p>
             <p class="mt-2 text-sm text-slate-500">{{ candidate.dateText }}<span v-if="candidate.locationText"> · {{ candidate.locationText }}</span></p>
             <div v-if="candidate.possibleDuplicates.length" class="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
               <p class="font-bold">Kontrollér før godkendelse</p>
@@ -130,7 +130,7 @@
                   <div><dt class="inline font-bold">Sted: </dt><dd class="inline">{{ candidate.locationText || 'Ikke oplyst' }}</dd></div>
                   <div><dt class="inline font-bold">Adresse: </dt><dd class="inline">{{ candidate.addressText || 'Ikke oplyst' }}</dd></div>
                 </dl>
-                <p class="mt-2 max-h-28 overflow-y-auto text-sm text-slate-700">{{ candidate.description || 'Ingen beskrivelse fra kilden.' }}</p>
+                <p class="mt-2 max-h-28 overflow-y-auto whitespace-pre-line text-sm text-slate-700">{{ candidate.description || 'Ingen beskrivelse fra kilden.' }}</p>
               </article>
               <article class="min-w-0 rounded-md bg-white p-3 shadow-sm">
                 <p class="text-xs font-black uppercase tracking-wide text-amber-800">Mulig dublet · {{ duplicate.matchConfidence }} sandsynlighed</p>
@@ -141,7 +141,7 @@
                   <div><dt class="inline font-bold">Sted: </dt><dd class="inline">{{ duplicate.locationText || 'Ikke oplyst' }}</dd></div>
                   <div><dt class="inline font-bold">Adresse: </dt><dd class="inline">{{ duplicate.addressText || 'Ikke oplyst' }}</dd></div>
                 </dl>
-                <p class="mt-2 max-h-28 overflow-y-auto text-sm text-slate-700">{{ duplicate.description || 'Ingen beskrivelse fra kilden.' }}</p>
+                <p class="mt-2 max-h-28 overflow-y-auto whitespace-pre-line text-sm text-slate-700">{{ duplicate.description || 'Ingen beskrivelse fra kilden.' }}</p>
               </article>
             </section>
             <p v-if="candidate.reviewedAt" class="mt-2 text-xs font-semibold text-slate-500">
