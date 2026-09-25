@@ -46,6 +46,10 @@ const schemas: Record<ContentSuggestionType, Joi.ObjectSchema> = {
   attraction: Joi.object(sharedPlaceFields),
   event: Joi.object({
     ...sharedPlaceFields,
+    // Crawled event pages often contain practical information, programmes
+    // and accessibility details. Keep the full source text available for
+    // moderation instead of forcing admins to shorten it manually.
+    description: text(3, 5_000).required(),
     isAnnual: Joi.boolean().default(false),
     startDate: Joi.date().required(),
     endDate: Joi.date().min(Joi.ref("startDate")).required(),

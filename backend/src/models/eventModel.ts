@@ -3,7 +3,7 @@ import { Event } from "../interfaces/event";
 
 const eventSchema = new Schema<Event>({
   name: { type: String, required: true, min: 6, max: 255 },
-  description: { type: String, required: true, min: 3, max: 1024 },
+  description: { type: String, required: true, min: 3, max: 5_000 },
   heroImage: { type: String, required: true },
   imageArray: { type: [String], default: [] },
   price: { type: Number, required: true, min: 0 },

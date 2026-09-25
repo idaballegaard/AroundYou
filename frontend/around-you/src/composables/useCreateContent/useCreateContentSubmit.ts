@@ -134,7 +134,7 @@ export const useCreateContentSubmit = (
         field: 'Beskrivelse',
         required: true,
         min: 3,
-        max: 1024,
+        max: 5_000,
       }),
       heroImage,
       imageArray,

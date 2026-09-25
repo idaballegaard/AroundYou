@@ -63,6 +63,7 @@
   <textarea
     v-model="form.description"
     rows="4"
+    maxlength="5000"
     class="rounded-xl border border-slate-200 px-4 py-3 sm:col-span-2"
     placeholder="Beskrivelse"
   ></textarea>
