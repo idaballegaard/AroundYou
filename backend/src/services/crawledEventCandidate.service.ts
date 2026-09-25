@@ -71,7 +71,7 @@ export async function getCrawledEventCandidates(
     status: { $in: ["new", "approved"] },
     $or: candidateDates.map((date) => ({ startDate: new RegExp(`^${date}`) })),
   })
-    .select("title source sourceUrl dateText startDate locationText addressText status")
+    .select("title source sourceUrl dateText description startDate endDate locationText addressText imageUrl status")
     .lean();
 
   const duplicatesByFingerprint = new Map<string, CrawledEventCandidatePossibleDuplicate[]>();
@@ -92,6 +92,12 @@ export async function getCrawledEventCandidates(
       source: candidate.source,
       sourceUrl: candidate.sourceUrl,
       dateText: candidate.dateText,
+      description: candidate.description,
+      locationText: candidate.locationText,
+      addressText: candidate.addressText,
+      imageUrl: candidate.imageUrl,
+      startDate: candidate.startDate,
+      endDate: candidate.endDate,
       status: candidate.status as "new" | "approved",
       matchScore: duplicateMatch.matchScore,
       matchConfidence: duplicateMatch.matchConfidence,

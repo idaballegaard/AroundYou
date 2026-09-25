@@ -109,9 +109,41 @@
                   · {{ duplicate.matchReasons.join(', ') }}
                   <br />
                   {{ duplicate.status === 'approved' ? 'Allerede godkendt' : 'Ny kandidat' }} fra {{ duplicate.source }}: {{ duplicate.title }}
+                  <button type="button" class="ml-2 font-bold text-[#094b7b] underline underline-offset-2" @click="toggleDuplicateComparison(candidate, duplicate._id)">
+                    {{ isComparingDuplicate(candidate._id, duplicate._id) ? 'Luk sammenligning' : 'Sammenlign' }}
+                  </button>
                 </li>
               </ul>
             </div>
+            <section
+              v-for="duplicate in candidate.possibleDuplicates"
+              v-show="isComparingDuplicate(candidate._id, duplicate._id)"
+              :key="`comparison-${duplicate._id}`"
+              class="mt-3 grid gap-3 rounded-md border border-[#094b7b] bg-slate-50 p-3 lg:grid-cols-2"
+            >
+              <article class="min-w-0 rounded-md bg-white p-3 shadow-sm">
+                <p class="text-xs font-black uppercase tracking-wide text-[#094b7b]">Denne kandidat</p>
+                <img v-if="candidate.imageUrl" :src="candidate.imageUrl" :alt="candidate.title" class="mt-2 h-32 w-full rounded object-cover" />
+                <h4 class="mt-2 font-black text-slate-900">{{ candidate.title }}</h4>
+                <dl class="mt-2 grid gap-1 text-sm text-slate-700">
+                  <div><dt class="inline font-bold">Tid: </dt><dd class="inline">{{ formatEventDateTime(candidate.startDate, candidate.endDate) }}</dd></div>
+                  <div><dt class="inline font-bold">Sted: </dt><dd class="inline">{{ candidate.locationText || 'Ikke oplyst' }}</dd></div>
+                  <div><dt class="inline font-bold">Adresse: </dt><dd class="inline">{{ candidate.addressText || 'Ikke oplyst' }}</dd></div>
+                </dl>
+                <p class="mt-2 max-h-28 overflow-y-auto text-sm text-slate-700">{{ candidate.description || 'Ingen beskrivelse fra kilden.' }}</p>
+              </article>
+              <article class="min-w-0 rounded-md bg-white p-3 shadow-sm">
+                <p class="text-xs font-black uppercase tracking-wide text-amber-800">Mulig dublet · {{ duplicate.matchConfidence }} sandsynlighed</p>
+                <img v-if="duplicate.imageUrl" :src="duplicate.imageUrl" :alt="duplicate.title" class="mt-2 h-32 w-full rounded object-cover" />
+                <h4 class="mt-2 font-black text-slate-900">{{ duplicate.title }}</h4>
+                <dl class="mt-2 grid gap-1 text-sm text-slate-700">
+                  <div><dt class="inline font-bold">Tid: </dt><dd class="inline">{{ formatEventDateTime(duplicate.startDate, duplicate.endDate) }}</dd></div>
+                  <div><dt class="inline font-bold">Sted: </dt><dd class="inline">{{ duplicate.locationText || 'Ikke oplyst' }}</dd></div>
+                  <div><dt class="inline font-bold">Adresse: </dt><dd class="inline">{{ duplicate.addressText || 'Ikke oplyst' }}</dd></div>
+                </dl>
+                <p class="mt-2 max-h-28 overflow-y-auto text-sm text-slate-700">{{ duplicate.description || 'Ingen beskrivelse fra kilden.' }}</p>
+              </article>
+            </section>
             <p v-if="candidate.reviewedAt" class="mt-2 text-xs font-semibold text-slate-500">
               Behandlet {{ new Date(candidate.reviewedAt).toLocaleString('da-DK') }}
               <span v-if="candidate.rejectionReason"> · {{ candidate.rejectionReason }}</span>
@@ -176,6 +208,7 @@ const {
   isCrawling,
   isGeocoding,
   isLoading,
+  isComparingDuplicate,
   loadCandidates,
   openApproval,
   rejectCandidate,
@@ -187,6 +220,7 @@ const {
   setActiveStatus,
   statusError,
   successMessage,
+  toggleDuplicateComparison,
 } = useAdminCrawlerCandidates()
 
 const statusTabs = [
@@ -200,5 +234,21 @@ function formatDate(value: string): string {
     dateStyle: 'short',
     timeStyle: 'short',
   })
+}
+
+function formatEventDateTime(startDate: string, endDate: string): string {
+  if (!startDate) return 'Ikke oplyst'
+
+  const start = new Date(startDate)
+  const end = endDate ? new Date(endDate) : null
+  if (Number.isNaN(start.getTime())) return 'Ikke oplyst'
+
+  const date = start.toLocaleDateString('da-DK', { dateStyle: 'medium' })
+  const startTime = start.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })
+  const endTime = end && !Number.isNaN(end.getTime())
+    ? end.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })
+    : ''
+
+  return `${date}, kl. ${startTime}${endTime ? `–${endTime}` : ''}`
 }
 </script>

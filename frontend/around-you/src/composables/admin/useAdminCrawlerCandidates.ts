@@ -101,6 +101,7 @@ export function useAdminCrawlerCandidates() {
   const activeStatus = ref<CrawledEventCandidateStatus>('new')
   const approvalCandidate = ref<CrawledEventCandidate | null>(null)
   const approvalForm = ref<CrawledEventApprovalPayload | null>(null)
+  const comparisonDuplicate = ref<{ candidateId: string; duplicateId: string } | null>(null)
   const activeCandidateId = ref('')
   const errorMessage = ref('')
   const isCrawling = ref(false)
@@ -213,6 +214,17 @@ export function useAdminCrawlerCandidates() {
     approvalForm.value = null
   }
 
+  function toggleDuplicateComparison(candidate: CrawledEventCandidate, duplicateId: string): void {
+    const isOpen = comparisonDuplicate.value?.candidateId === candidate._id
+      && comparisonDuplicate.value.duplicateId === duplicateId
+    comparisonDuplicate.value = isOpen ? null : { candidateId: candidate._id, duplicateId }
+  }
+
+  function isComparingDuplicate(candidateId: string, duplicateId: string): boolean {
+    return comparisonDuplicate.value?.candidateId === candidateId
+      && comparisonDuplicate.value.duplicateId === duplicateId
+  }
+
   async function approveCandidate(): Promise<void> {
     if (!approvalCandidate.value || !approvalForm.value) return
 
@@ -288,6 +300,7 @@ export function useAdminCrawlerCandidates() {
     activeStatus,
     approvalCandidate,
     approvalForm,
+    comparisonDuplicate,
     activeCandidateId,
     approveCandidate,
     closeApproval,
@@ -295,6 +308,7 @@ export function useAdminCrawlerCandidates() {
     isCrawling,
     isGeocoding,
     isLoading,
+    isComparingDuplicate,
     loadCandidates,
     openApproval,
     rejectCandidate,
@@ -306,5 +320,6 @@ export function useAdminCrawlerCandidates() {
     statusError,
     setActiveStatus,
     successMessage,
+    toggleDuplicateComparison,
   }
 }

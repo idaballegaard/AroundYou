@@ -8,6 +8,12 @@ export type CrawledEventCandidatePossibleDuplicate = {
   source: string;
   sourceUrl: string;
   dateText: string;
+  description: string;
+  locationText: string;
+  addressText: string;
+  imageUrl: string;
+  startDate: string;
+  endDate: string;
   status: "new" | "approved";
   matchScore: number;
   matchConfidence: "Høj" | "Middel" | "Lav";
