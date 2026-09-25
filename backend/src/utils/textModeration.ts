@@ -20,7 +20,9 @@ const DISALLOWED_LANGUAGE_PATTERNS = [
   new RegExp(`\\bn+${GAP}i+${GAP}g+${GAP}(?:e+${GAP}r+|a+)s?\\b`, "i"),
   new RegExp(`\\bn+${GAP}e+${GAP}g+${GAP}e+${GAP}r+e?\\b`, "i"),
   new RegExp(`\\bp+${GAP}e+${GAP}r+${GAP}k+${GAP}e+${GAP}r+e?\\b`, "i"),
-  new RegExp(`\\bf+${GAP}a+${GAP}g+(?:${GAP}o+${GAP}t+)?s?\\b`, "i"),
+  // Do not match the Danish word "fag" (subject/trade). Only the complete
+  // English slur is blocked, including deliberately spaced/leetspeak forms.
+  new RegExp(`\\bf+${GAP}a+${GAP}g+${GAP}g+${GAP}o+${GAP}t+s?\\b`, "i"),
   new RegExp(`\\br+${GAP}e+${GAP}t+${GAP}a+${GAP}r+${GAP}d+(?:${GAP}e+${GAP}d+)?s?\\b`, "i"),
   new RegExp(`\\bt+${GAP}r+${GAP}a+${GAP}n+${GAP}n+${GAP}y+s?\\b`, "i"),
 ];
