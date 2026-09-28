@@ -1,5 +1,6 @@
 import {
   CrawledEventCandidatePossibleDuplicate,
+  CrawledEventCandidateQualityIssue,
   CrawledEventCandidateStatus,
 } from "../interfaces/crawledEventCandidate";
 import { CrawledEventCandidateModel } from "../models/crawledEventCandidateModel";
@@ -59,7 +60,11 @@ export async function getCrawledEventCandidates(
 
   const candidateDates = [...new Set(candidates.map((candidate) => candidate.startDate.slice(0, 10)).filter(Boolean))];
   if (!candidateDates.length) {
-    return candidates.map((candidate) => ({ ...candidate, possibleDuplicates: [] }));
+    return candidates.map((candidate) => ({
+      ...candidate,
+      possibleDuplicates: [],
+      qualityIssues: getCandidateQualityIssues(candidate),
+    }));
   }
 
   // A source-specific ID only prevents repeat imports from that same source.
@@ -111,7 +116,42 @@ export async function getCrawledEventCandidates(
     possibleDuplicates: (duplicatesByFingerprint.get(
       getDuplicateFingerprint(candidate.title, candidate.startDate),
     ) ?? []).sort((first, second) => second.matchScore - first.matchScore),
+    qualityIssues: getCandidateQualityIssues(candidate),
   }));
+}
+
+type CandidateQualityComparable = {
+  description: string;
+  startDate: string;
+  locationText: string;
+  addressText: string;
+  imageUrl: string;
+};
+
+function getCandidateQualityIssues(
+  candidate: CandidateQualityComparable,
+): CrawledEventCandidateQualityIssue[] {
+  const issues: CrawledEventCandidateQualityIssue[] = [];
+
+  if (!candidate.startDate) {
+    issues.push({ field: "startDate", label: "Startdato og -tid" });
+  } else if (!getKnownStartTime(candidate.startDate)) {
+    issues.push({ field: "startDate", label: "Startklokkeslæt" });
+  }
+
+  if (!candidate.locationText.trim() && !candidate.addressText.trim()) {
+    issues.push({ field: "location", label: "Sted eller adresse" });
+  }
+
+  if (!candidate.imageUrl.trim()) {
+    issues.push({ field: "image", label: "Billede" });
+  }
+
+  if (candidate.description.trim().length < 3) {
+    issues.push({ field: "description", label: "Beskrivelse" });
+  }
+
+  return issues;
 }
 
 type DuplicateComparableCandidate = {

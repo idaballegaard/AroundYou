@@ -101,6 +101,14 @@
             </div>
             <p v-if="candidate.description" class="mt-2 whitespace-pre-line text-sm text-slate-700">{{ candidate.description }}</p>
             <p class="mt-2 text-sm text-slate-500">{{ candidate.dateText }}<span v-if="candidate.locationText"> · {{ candidate.locationText }}</span></p>
+            <div v-if="activeStatus === 'new' && candidate.qualityIssues.length" class="mt-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">
+              <p class="font-bold">Mangler oplysninger</p>
+              <div class="mt-1 flex flex-wrap gap-1.5">
+                <span v-for="issue in candidate.qualityIssues" :key="issue.field" class="rounded-full bg-white px-2 py-0.5 text-xs font-bold text-rose-800">{{ issue.label }}</span>
+              </div>
+              <p v-if="candidate.qualityIssues.some((issue) => issue.field === 'location')" class="mt-1 text-xs text-rose-800">Tilføj sted eller adresse, så GPS kan findes automatisk ved godkendelse.</p>
+            </div>
+            <p v-else-if="activeStatus === 'new'" class="mt-3 text-xs font-bold text-emerald-700">Klar til gennemgang</p>
             <div v-if="candidate.possibleDuplicates.length" class="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
               <p class="font-bold">Kontrollér før godkendelse</p>
               <ul class="mt-1 grid gap-1">

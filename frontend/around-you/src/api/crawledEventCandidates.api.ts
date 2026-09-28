@@ -20,6 +20,10 @@ export type CrawledEventCandidate = {
   reviewedAt?: string
   rejectionReason?: string
   crawledAt: string
+  qualityIssues: Array<{
+    field: 'startDate' | 'location' | 'image' | 'description'
+    label: string
+  }>
   possibleDuplicates: Array<{
     _id: string
     title: string

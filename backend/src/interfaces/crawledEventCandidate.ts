@@ -2,6 +2,11 @@ import { Document } from "mongoose";
 
 export type CrawledEventCandidateStatus = "new" | "approved" | "rejected";
 
+export type CrawledEventCandidateQualityIssue = {
+  field: "startDate" | "location" | "image" | "description";
+  label: string;
+};
+
 export type CrawledEventCandidatePossibleDuplicate = {
   _id: string;
   title: string;
