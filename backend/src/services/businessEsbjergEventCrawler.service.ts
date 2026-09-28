@@ -1,6 +1,7 @@
 import { load } from "cheerio";
 import { Configuration, HttpCrawler } from "crawlee";
 import { CrawledEventCandidateInput, saveCrawledEventCandidates } from "./crawledEventCandidate.service";
+import { UTF8_RESPONSE_ENCODING } from "./crawlerTextEncoding.service";
 
 export const BUSINESS_ESBJERG_EVENT_SOURCE = "Business Esbjerg arrangementer";
 export const BUSINESS_ESBJERG_EVENT_CALENDAR_URL = "https://www.businessesbjerg.com/arrangementer";
@@ -75,6 +76,7 @@ async function crawlApiPages(urls: string[]): Promise<BusinessEsbjergApiResponse
       maxRequestsPerCrawl: urls.length,
       requestHandlerTimeoutSecs: 20,
       useSessionPool: false,
+      forceResponseEncoding: UTF8_RESPONSE_ENCODING,
       async requestHandler({ body }) {
         pages.push(JSON.parse(body.toString()) as BusinessEsbjergApiResponse);
       },
@@ -147,6 +149,7 @@ async function addEventDetails(
       maxRequestsPerCrawl: events.length,
       requestHandlerTimeoutSecs: 20,
       useSessionPool: false,
+      forceResponseEncoding: UTF8_RESPONSE_ENCODING,
       async requestHandler({ request, body }) {
         const sourceId = request.userData.sourceId;
         if (typeof sourceId !== "string") return;

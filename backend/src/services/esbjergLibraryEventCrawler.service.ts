@@ -1,6 +1,7 @@
 import { load } from "cheerio";
 import { Configuration, HttpCrawler } from "crawlee";
 import { CrawledEventCandidateInput, saveCrawledEventCandidates } from "./crawledEventCandidate.service";
+import { UTF8_RESPONSE_ENCODING } from "./crawlerTextEncoding.service";
 
 export const ESBJERG_LIBRARY_EVENT_SOURCE = "Esbjerg Kommunes Biblioteker arrangementer";
 export const ESBJERG_LIBRARY_EVENT_CALENDAR_URL = "https://www.esbjergbibliotek.dk/arrangementer";
@@ -59,6 +60,7 @@ async function crawlEventPages(urls: string[]): Promise<string[]> {
       maxRequestsPerCrawl: urls.length,
       requestHandlerTimeoutSecs: 20,
       useSessionPool: false,
+      forceResponseEncoding: UTF8_RESPONSE_ENCODING,
       async requestHandler({ body }) {
         htmlPages.push(body.toString());
       },

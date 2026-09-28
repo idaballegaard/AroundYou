@@ -1,5 +1,9 @@
 import { load } from "cheerio";
 import { Configuration, HttpCrawler } from "crawlee";
+import {
+  KULTUNAUT_DETAIL_RESPONSE_ENCODING,
+  UTF8_RESPONSE_ENCODING,
+} from "./crawlerTextEncoding.service";
 
 const OPLEV_ESBJERG_EVENT_CALENDAR_URL = "https://oplev.esbjerg.dk/eventkalender";
 export const OPLEV_ESBJERG_EVENT_SOURCE = "Oplev Esbjerg eventkalender";
@@ -210,6 +214,10 @@ async function addEventDetailAddresses(
       maxRequestsPerCrawl: events.length,
       requestHandlerTimeoutSecs: 20,
       useSessionPool: false,
+      // Kultunaut's event detail pages contain Windows-1252 bytes despite
+      // declaring UTF-8. Without this override Danish letters in addresses
+      // are decoded as replacement characters (e.g. N�rrebrogade).
+      forceResponseEncoding: KULTUNAUT_DETAIL_RESPONSE_ENCODING,
       async requestHandler({ request, body }) {
         const sourceId = request.userData.sourceId;
 
@@ -253,6 +261,7 @@ export async function crawlOplevEsbjergEvents(
       requestHandlerTimeoutSecs: 20,
       useSessionPool: false,
       additionalMimeTypes: ["application/javascript"],
+      forceResponseEncoding: UTF8_RESPONSE_ENCODING,
       async requestHandler({ body }) {
         eventHtmlPages.push(extractKultunautHtml(body.toString()));
       },
