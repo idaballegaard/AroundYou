@@ -102,6 +102,17 @@ export type CrawledEventApprovalPayload = {
 
 export type CrawledEventCandidateStatus = CrawledEventCandidate['status']
 
+export type CrawledEventBulkApprovalPreview = {
+  eligibleCount: number
+  incompleteCount: number
+  duplicateCount: number
+}
+
+export type CrawledEventBulkApprovalResult = CrawledEventBulkApprovalPreview & {
+  approvedCount: number
+  failed: Array<{ title: string; source: string; message: string }>
+}
+
 export function fetchOplevEsbjergEventCandidates(
   status: CrawledEventCandidateStatus = 'new',
   sourceId = OPLEV_ESBJERG_SOURCE_ID,
@@ -148,4 +159,17 @@ export function rejectOplevEsbjergEventCandidate(id: string, reason: string, sou
 
 export function fetchCrawlerEventSources(): Promise<CrawlerEventSource[]> {
   return apiRequest<CrawlerEventSource[]>('/admin/crawler/sources', { token: getAuthToken() })
+}
+
+export function fetchCrawledEventBulkApprovalPreview(): Promise<CrawledEventBulkApprovalPreview> {
+  return apiRequest<CrawledEventBulkApprovalPreview>('/admin/crawler/events/approve-complete/preview', {
+    token: getAuthToken(),
+  })
+}
+
+export function approveCompleteCrawledEventCandidates(): Promise<CrawledEventBulkApprovalResult> {
+  return apiRequest<CrawledEventBulkApprovalResult>('/admin/crawler/events/approve-complete', {
+    method: 'POST',
+    token: getAuthToken(),
+  })
 }

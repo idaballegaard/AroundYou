@@ -3,7 +3,9 @@ import { computed, onMounted, ref } from 'vue'
 import { getGeocodedCoordinates } from '@/api/geocoding.api'
 import {
   approveOplevEsbjergEventCandidate,
+  approveCompleteCrawledEventCandidates,
   crawlOplevEsbjergEvents,
+  fetchCrawledEventBulkApprovalPreview,
   fetchCrawlerEventSources,
   fetchOplevEsbjergCrawlerStatus,
   fetchOplevEsbjergEventCandidates,
@@ -105,6 +107,7 @@ export function useAdminCrawlerCandidates() {
   const activeCandidateId = ref('')
   const errorMessage = ref('')
   const isCrawling = ref(false)
+  const isBulkApproving = ref(false)
   const isGeocoding = ref(false)
   const isLoading = ref(false)
   const successMessage = ref('')
@@ -164,6 +167,37 @@ export function useAdminCrawlerCandidates() {
       errorMessage.value = error instanceof Error ? error.message : 'Eventkalenderen kunne ikke hentes.'
     } finally {
       isCrawling.value = false
+    }
+  }
+
+  async function approveAllCompleteCandidates(): Promise<void> {
+    errorMessage.value = ''
+    successMessage.value = ''
+
+    try {
+      const preview = await fetchCrawledEventBulkApprovalPreview()
+      if (!preview.eligibleCount) {
+        successMessage.value = `Der er ingen komplette kandidater at godkende. ${preview.incompleteCount} mangler oplysninger, og ${preview.duplicateCount} har mulige dubletter.`
+        return
+      }
+
+      const confirmed = window.confirm(
+        `${preview.eligibleCount} komplette event${preview.eligibleCount === 1 ? '' : 's'} fra alle kilder bliver publiceret. ${preview.incompleteCount} med manglende oplysninger og ${preview.duplicateCount} med mulige dubletter springes over. Fortsæt?`,
+      )
+      if (!confirmed) return
+
+      isBulkApproving.value = true
+      const result = await approveCompleteCrawledEventCandidates()
+      await loadCandidates()
+
+      successMessage.value = `${result.approvedCount} event${result.approvedCount === 1 ? '' : 's'} er godkendt og publiceret. ${result.incompleteCount} med manglende oplysninger og ${result.duplicateCount} med mulige dubletter blev sprunget over.`
+      if (result.failed.length) {
+        errorMessage.value = `${result.failed.length} kandidat${result.failed.length === 1 ? '' : 'er'} kunne ikke godkendes automatisk og kræver manuel gennemgang.`
+      }
+    } catch (error) {
+      errorMessage.value = error instanceof Error ? error.message : 'Eventkandidaterne kunne ikke godkendes samlet.'
+    } finally {
+      isBulkApproving.value = false
     }
   }
 
@@ -303,9 +337,11 @@ export function useAdminCrawlerCandidates() {
     comparisonDuplicate,
     activeCandidateId,
     approveCandidate,
+    approveAllCompleteCandidates,
     closeApproval,
     errorMessage,
     isCrawling,
+    isBulkApproving,
     isGeocoding,
     isLoading,
     isComparingDuplicate,

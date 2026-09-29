@@ -34,6 +34,14 @@
         >
           {{ isCrawling ? 'Henter events...' : `Hent events fra ${selectedSourceLabel}` }}
         </button>
+        <button
+          v-if="activeStatus === 'new'"
+          class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-black text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+          :disabled="isBulkApproving || isCrawling"
+          @click="approveAllCompleteCandidates"
+        >
+          {{ isBulkApproving ? 'Godkender events...' : 'Godkend alle komplette' }}
+        </button>
       </div>
     </div>
 
@@ -208,12 +216,14 @@ const {
   approvalCandidate,
   approvalForm,
   approveCandidate,
+  approveAllCompleteCandidates,
   candidates,
   crawlerSources,
   crawlerStatus,
   closeApproval,
   errorMessage,
   isCrawling,
+  isBulkApproving,
   isGeocoding,
   isLoading,
   isComparingDuplicate,

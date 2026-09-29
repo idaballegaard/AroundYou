@@ -8,7 +8,9 @@ import { EsbjergCityEventCrawlerError } from "../services/esbjergCityEventCrawle
 import { BusinessEsbjergEventCrawlerError } from "../services/businessEsbjergEventCrawler.service";
 import {
   approveCrawledEventCandidate,
+  approveCompleteCrawledEventCandidates,
   CrawledEventCandidateReviewError,
+  getCrawledEventBulkApprovalPreview,
   getCrawledEventCandidates as findCrawledEventCandidates,
   getOplevEsbjergEventCandidates as findOplevEsbjergEventCandidates,
   rejectCrawledEventCandidate,
@@ -24,6 +26,7 @@ import {
 import {
   getCrawlerEventSource,
   getCrawlerEventSources as listCrawlerEventSources,
+  getActiveCrawlerEventSources,
   OPLEV_ESBJERG_SOURCE_ID,
 } from "../services/crawlerSourceRegistry.service";
 import {
@@ -118,6 +121,33 @@ export async function getOplevEsbjergEventImportStatus(
 
 export async function getCrawlerEventSources(_req: Request, res: Response): Promise<void> {
   res.status(200).json(listCrawlerEventSources());
+}
+
+function getBulkApprovalSources() {
+  return getActiveCrawlerEventSources().map(({ label, candidateSource }) => ({ label, candidateSource }));
+}
+
+export async function getCrawlerEventBulkApprovalPreview(_req: Request, res: Response): Promise<void> {
+  try {
+    res.status(200).json(await getCrawledEventBulkApprovalPreview(getBulkApprovalSources()));
+  } catch (error) {
+    console.error("Could not prepare bulk crawler event approval:", error);
+    res.status(500).json({ message: "Godkendelsesoversigten kunne ikke hentes." });
+  }
+}
+
+export async function approveCompleteCrawlerEventCandidates(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    res.status(200).json(
+      await approveCompleteCrawledEventCandidates(getBulkApprovalSources(), req.user?.userID),
+    );
+  } catch (error) {
+    console.error("Could not bulk approve crawler event candidates:", error);
+    res.status(500).json({ message: "Eventkandidaterne kunne ikke godkendes samlet." });
+  }
 }
 
 export async function crawlCrawlerEventCalendar(req: Request, res: Response): Promise<void> {

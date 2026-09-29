@@ -29,6 +29,22 @@ export type CrawledEventCandidatePersistence = {
   updated: number;
 };
 
+export type CrawledEventCandidateApprovalSource = {
+  label: string;
+  candidateSource: string;
+};
+
+export type CrawledEventBulkApprovalPreview = {
+  eligibleCount: number;
+  incompleteCount: number;
+  duplicateCount: number;
+};
+
+export type CrawledEventBulkApprovalResult = CrawledEventBulkApprovalPreview & {
+  approvedCount: number;
+  failed: Array<{ title: string; source: string; message: string }>;
+};
+
 export async function importOplevEsbjergEventCandidates(limit?: number) {
   const crawl = await crawlOplevEsbjergEvents(limit);
   const persistence = await saveCrawledEventCandidates(
@@ -44,6 +60,96 @@ export async function getOplevEsbjergEventCandidates(
   status: CrawledEventCandidateStatus = "new",
 ) {
   return getCrawledEventCandidates(OPLEV_ESBJERG_EVENT_SOURCE, status);
+}
+
+async function collectBulkApprovalCandidates(sources: CrawledEventCandidateApprovalSource[]) {
+  const candidatesBySource = await Promise.all(
+    sources.map(async (source) => ({
+      source,
+      candidates: await getCrawledEventCandidates(source.candidateSource, "new"),
+    })),
+  );
+  const eligible: Array<{ source: CrawledEventCandidateApprovalSource; candidate: any }> = [];
+  let incompleteCount = 0;
+  let duplicateCount = 0;
+
+  for (const { source, candidates } of candidatesBySource) {
+    for (const candidate of candidates) {
+      if (candidate.qualityIssues.length) {
+        incompleteCount += 1;
+        continue;
+      }
+
+      if (candidate.possibleDuplicates.length) {
+        duplicateCount += 1;
+        continue;
+      }
+
+      eligible.push({ source, candidate });
+    }
+  }
+
+  return { eligible, incompleteCount, duplicateCount };
+}
+
+export async function getCrawledEventBulkApprovalPreview(
+  sources: CrawledEventCandidateApprovalSource[],
+): Promise<CrawledEventBulkApprovalPreview> {
+  const result = await collectBulkApprovalCandidates(sources);
+  return {
+    eligibleCount: result.eligible.length,
+    incompleteCount: result.incompleteCount,
+    duplicateCount: result.duplicateCount,
+  };
+}
+
+export async function approveCompleteCrawledEventCandidates(
+  sources: CrawledEventCandidateApprovalSource[],
+  reviewedBy?: string,
+): Promise<CrawledEventBulkApprovalResult> {
+  const collected = await collectBulkApprovalCandidates(sources);
+  const failed: CrawledEventBulkApprovalResult["failed"] = [];
+  let approvedCount = 0;
+
+  for (const { source, candidate } of collected.eligible) {
+    try {
+      await approveCrawledEventCandidate(
+        candidate._id.toString(),
+        {
+          name: candidate.title,
+          description: candidate.description,
+          heroImage: candidate.imageUrl,
+          price: 0,
+          link: candidate.sourceUrl,
+          address: candidate.addressText,
+          city: candidate.locationText,
+          gpsPosition: "",
+          slugArray: candidate.category ? [candidate.category.toLowerCase()] : [],
+          isAnnual: false,
+          startDate: candidate.startDate,
+          endDate: candidate.endDate,
+          openingHours: [],
+        },
+        reviewedBy,
+        source.candidateSource,
+      );
+      approvedCount += 1;
+    } catch (error) {
+      failed.push({
+        title: candidate.title,
+        source: source.label,
+        message: error instanceof Error ? error.message : "Ukendt fejl",
+      });
+    }
+  }
+
+  return {
+    eligibleCount: collected.eligible.length,
+    incompleteCount: collected.incompleteCount,
+    duplicateCount: collected.duplicateCount,
+    approvedCount,
+    failed,
+  };
 }
 
 export async function getCrawledEventCandidates(

@@ -1,12 +1,14 @@
 import { Router } from "express";
 import {
   approveOplevEsbjergEventCandidate,
+  approveCompleteCrawlerEventCandidates,
   approveCrawlerEventCandidate,
   crawlCrawlerEventCalendar,
   crawlOplevEsbjergEventCalendar,
   getCrawlerEventCandidates,
   getCrawlerEventImportStatus,
   getCrawlerEventSources,
+  getCrawlerEventBulkApprovalPreview,
   getOplevEsbjergEventImportStatus,
   getOplevEsbjergEventCandidates,
   rejectOplevEsbjergEventCandidate,
@@ -54,6 +56,23 @@ router.get(
   requireAdmin,
   requirePermission("admin:access"),
   getCrawlerEventSources,
+);
+
+router.get(
+  "/admin/crawler/events/approve-complete/preview",
+  verifyToken,
+  requireAdmin,
+  requirePermission("admin:access"),
+  getCrawlerEventBulkApprovalPreview,
+);
+
+router.post(
+  "/admin/crawler/events/approve-complete",
+  verifyToken,
+  requireAdmin,
+  requirePermission("admin:access"),
+  adminMutationRateLimiter,
+  approveCompleteCrawlerEventCandidates,
 );
 
 router.post(

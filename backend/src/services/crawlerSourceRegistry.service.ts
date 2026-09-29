@@ -77,3 +77,7 @@ export function getScheduledCrawlerEventSources(): CrawlerEventSource[] {
     (source) => source.status === "active" && source.supportsScheduledImport && source.importCandidates,
   );
 }
+
+export function getActiveCrawlerEventSources(): CrawlerEventSource[] {
+  return crawlerEventSources.filter((source) => source.status === "active");
+}
