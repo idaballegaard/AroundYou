@@ -107,10 +107,11 @@ Use **npm** for this project. The repository has `package-lock.json`; do not use
 
 ## 🤖 Crawler MCP (first step)
 
-The first MCP server is deliberately small and local: it exposes the read-only
-`get_crawled_event_candidate` tool. A language model can inspect one new
-crawler candidate and receive its source data plus any missing basic fields.
-It cannot approve, edit, reject, or publish events.
+The first MCP server is deliberately small and local. It exposes two read-only
+tools: `list_new_crawled_event_candidates` for a short overview and
+`get_crawled_event_candidate` for one candidate's complete data. A language
+model can inspect source data plus missing basic fields, but cannot approve,
+edit, reject, or publish events.
 
 Build the backend, then start it from the `backend` folder:
 

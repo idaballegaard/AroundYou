@@ -69,6 +69,63 @@ export function createCrawledEventCandidateMcpServer(): McpServer {
   });
 
   server.registerTool(
+    "list_new_crawled_event_candidates",
+    {
+      title: "Vis nye crawlede eventkandidater",
+      description:
+        "Henter en kort, nyeste-først oversigt over eventkandidater, som endnu ikke er gennemgået. Brug id'et med get_crawled_event_candidate for at læse en kandidats fulde data.",
+      inputSchema: {
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(25)
+          .default(10)
+          .describe("Antal kandidater, der skal returneres. Maksimalt 25."),
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async ({ limit }) => {
+      const candidates = await CrawledEventCandidateModel.find({ status: "new" })
+        .sort({ crawledAt: -1, _id: -1 })
+        .limit(limit)
+        .lean();
+
+      const response = {
+        candidates: candidates.map((candidate) => ({
+          id: candidate._id.toString(),
+          title: candidate.title,
+          source: candidate.source,
+          dateText: candidate.dateText,
+          startDate: candidate.startDate,
+          locationText: candidate.locationText,
+          addressText: candidate.addressText,
+          category: candidate.category,
+          sourceUrl: candidate.sourceUrl,
+          qualityIssues: getQualityIssues(candidate).map((issue) => issue.field),
+        })),
+        returnedCount: candidates.length,
+        nextStep:
+          "Vælg højst én kandidat og brug get_crawled_event_candidate for at læse dens fulde oplysninger.",
+      };
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(response, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
+  server.registerTool(
     "get_crawled_event_candidate",
     {
       title: "Hent crawlet eventkandidat",
