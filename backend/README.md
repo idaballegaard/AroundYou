@@ -98,11 +98,30 @@ Notes:
 npm run start-dev  # Start nodemon + ts-node in development
 npm run build      # Clean dist/ and compile TypeScript
 npm run start      # Run compiled dist/index.js
+npm run mcp:crawler # Run the local, read-only crawler MCP server (build first)
 npm test           # Run Playwright API tests
 npm run test:e2e   # Same as npm test
 ```
 
 Use **npm** for this project. The repository has `package-lock.json`; do not use pnpm/yarn lockfiles.
+
+## 🤖 Crawler MCP (first step)
+
+The first MCP server is deliberately small and local: it exposes the read-only
+`get_crawled_event_candidate` tool. A language model can inspect one new
+crawler candidate and receive its source data plus any missing basic fields.
+It cannot approve, edit, reject, or publish events.
+
+Build the backend, then start it from the `backend` folder:
+
+```sh
+npm run build
+npm run mcp:crawler
+```
+
+The server communicates through standard input/output. Keep it local and do
+not expose it as a public HTTP service; the next step can add a second,
+explicitly reviewed workflow for AI suggestions.
 
 ## 🗂️ Project Structure
 

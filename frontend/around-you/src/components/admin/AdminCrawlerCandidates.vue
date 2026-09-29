@@ -198,6 +198,7 @@
           <label class="grid gap-1 text-sm font-bold text-slate-700 sm:col-span-2">GPS-koordinater <span class="font-normal">(findes automatisk ud fra stedet, når det er muligt)</span><input v-model.trim="approvalForm.gpsPosition" :placeholder="isGeocoding ? 'Finder GPS-koordinater...' : '55.4765,8.4594'" class="rounded-md border border-slate-300 px-3 py-2 font-normal" /><span v-if="isGeocoding" class="text-xs font-normal text-slate-500">Slår stedet op i OpenStreetMap...</span><span v-else-if="!approvalForm.gpsPosition" class="text-xs font-normal text-slate-500">Kun hvis stedet ikke kan findes automatisk, skal du angive GPS eller rette stedfeltet.</span></label>
           <label class="flex items-center gap-2 text-sm font-bold text-slate-700 sm:col-span-2"><input v-model="approvalForm.isAnnual" type="checkbox" />Årligt event</label>
           <div class="flex flex-wrap gap-2 sm:col-span-2">
+            <p v-if="approvalError" class="w-full rounded-md bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700">{{ approvalError }}</p>
             <button class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-black text-white disabled:opacity-60" :disabled="activeCandidateId === candidate._id" type="submit">{{ activeCandidateId === candidate._id ? 'Godkender...' : 'Godkend og publicér' }}</button>
             <button class="rounded-md border border-slate-300 px-3 py-2 text-sm font-bold text-slate-700" type="button" @click="closeApproval">Annuller</button>
           </div>
@@ -215,6 +216,7 @@ const {
   activeStatus,
   approvalCandidate,
   approvalForm,
+  approvalError,
   approveCandidate,
   approveAllCompleteCandidates,
   candidates,

@@ -106,6 +106,7 @@ export function useAdminCrawlerCandidates() {
   const comparisonDuplicate = ref<{ candidateId: string; duplicateId: string } | null>(null)
   const activeCandidateId = ref('')
   const errorMessage = ref('')
+  const approvalError = ref('')
   const isCrawling = ref(false)
   const isBulkApproving = ref(false)
   const isGeocoding = ref(false)
@@ -220,6 +221,7 @@ export function useAdminCrawlerCandidates() {
     approvalCandidate.value = candidate
     approvalForm.value = createApprovalForm(candidate)
     errorMessage.value = ''
+    approvalError.value = ''
     successMessage.value = ''
 
     if (!candidate.locationText.trim()) return
@@ -246,6 +248,7 @@ export function useAdminCrawlerCandidates() {
   function closeApproval(): void {
     approvalCandidate.value = null
     approvalForm.value = null
+    approvalError.value = ''
   }
 
   function toggleDuplicateComparison(candidate: CrawledEventCandidate, duplicateId: string): void {
@@ -264,6 +267,7 @@ export function useAdminCrawlerCandidates() {
 
     activeCandidateId.value = approvalCandidate.value._id
     errorMessage.value = ''
+    approvalError.value = ''
 
     try {
       await approveOplevEsbjergEventCandidate(
@@ -277,7 +281,7 @@ export function useAdminCrawlerCandidates() {
       successMessage.value = 'Eventet er godkendt og er nu synligt for brugerne.'
       closeApproval()
     } catch (error) {
-      errorMessage.value = error instanceof Error ? error.message : 'Eventet kunne ikke godkendes.'
+      approvalError.value = error instanceof Error ? error.message : 'Eventet kunne ikke godkendes.'
     } finally {
       activeCandidateId.value = ''
     }
@@ -334,6 +338,7 @@ export function useAdminCrawlerCandidates() {
     activeStatus,
     approvalCandidate,
     approvalForm,
+    approvalError,
     comparisonDuplicate,
     activeCandidateId,
     approveCandidate,
