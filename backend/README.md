@@ -112,6 +112,7 @@ npm run start-dev  # Start nodemon + ts-node in development
 npm run build      # Clean dist/ and compile TypeScript
 npm run start      # Run compiled dist/index.js
 npm run mcp:crawler # Run the local, read-only crawler MCP server (build first)
+npm run mcp:verify-suggestion # Verify one Sealab AI suggestion through MCP
 npm test           # Run Playwright API tests
 npm run test:e2e   # Same as npm test
 ```
@@ -135,6 +136,17 @@ Build the backend, then start it from the `backend` folder:
 npm run build
 npm run mcp:crawler
 ```
+
+To run a complete, read-only check against one new candidate and the Sealab
+model, run:
+
+```sh
+npm run build
+npm run mcp:verify-suggestion
+```
+
+The check only reports whether a structured suggestion was returned. It never
+changes a candidate or publishes an event.
 
 The server communicates through standard input/output. Keep it local and do
 not expose it as a public HTTP service; the next step can add a second,
