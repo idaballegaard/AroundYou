@@ -126,9 +126,8 @@ tools: `list_new_crawled_event_candidates` for a short overview and
 model can inspect source data plus missing basic fields, but cannot approve,
 edit, reject, or publish events.
 
-`generate_crawled_event_suggestion` is also read-only: it asks the connected
-MCP client's language model for a Danish suggestion, but does not save it. The
-client must support MCP sampling for this tool to work.
+`generate_crawled_event_suggestion` is also read-only: it uses the configured
+Sealab language model for a Danish suggestion, but does not save it.
 
 Build the backend, then start it from the `backend` folder:
 
