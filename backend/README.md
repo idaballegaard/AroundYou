@@ -85,12 +85,25 @@ FRONTEND_ORIGIN=http://localhost:5173
 CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ```
 
+Sealab AI settings live in `backend/.env` and must remain server-side:
+
+```sh
+BASE_URL=http://mimer.sealab.dk:4000/v1
+API_KEY=<Sealab API key>
+MODEL=Gemma4
+CHAT_USE_MOCK=false
+TIMEOUT_MS=90000
+CHAT_MAX_MESSAGE_LENGTH=2000
+```
+
 Notes:
 
 - Do not commit real secrets.
 - `TOKEN_SECRET` must be stable across restarts or existing sessions become invalid.
 - `API_BASE_URL` controls generated public asset/API URLs.
 - `CORS_ORIGINS` should include every frontend origin that can call the API.
+- `BASE_URL`, `API_KEY`, and `MODEL` configure the Sealab chat client. Never
+  expose `API_KEY` in the frontend or commit it to Git.
 
 ## 📜 Scripts
 
