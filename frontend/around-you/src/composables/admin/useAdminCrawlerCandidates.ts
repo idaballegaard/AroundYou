@@ -106,6 +106,7 @@ export function useAdminCrawlerCandidates() {
   const approvalCandidate = ref<CrawledEventCandidate | null>(null)
   const approvalForm = ref<CrawledEventApprovalPayload | null>(null)
   const aiSuggestion = ref<{ candidateId: string; value: CrawledEventAiSuggestion } | null>(null)
+  const aiSuggestionError = ref<{ candidateId: string; message: string } | null>(null)
   const comparisonDuplicate = ref<{ candidateId: string; duplicateId: string } | null>(null)
   const activeCandidateId = ref('')
   const errorMessage = ref('')
@@ -113,7 +114,7 @@ export function useAdminCrawlerCandidates() {
   const isCrawling = ref(false)
   const isBulkApproving = ref(false)
   const isGeocoding = ref(false)
-  const isGeneratingAiSuggestion = ref(false)
+  const aiSuggestionCandidateId = ref('')
   const isLoading = ref(false)
   const successMessage = ref('')
   const statusError = ref('')
@@ -226,7 +227,8 @@ export function useAdminCrawlerCandidates() {
     approvalForm.value = createApprovalForm(candidate)
     errorMessage.value = ''
     approvalError.value = ''
-    aiSuggestion.value = null
+    if (aiSuggestion.value?.candidateId !== candidate._id) aiSuggestion.value = null
+    aiSuggestionError.value = null
     successMessage.value = ''
 
     if (!candidate.locationText.trim()) return
@@ -254,20 +256,23 @@ export function useAdminCrawlerCandidates() {
     approvalCandidate.value = null
     approvalForm.value = null
     approvalError.value = ''
-    aiSuggestion.value = null
+    aiSuggestionError.value = null
   }
 
   async function generateAiSuggestion(candidate: CrawledEventCandidate): Promise<void> {
-    isGeneratingAiSuggestion.value = true
-    approvalError.value = ''
+    aiSuggestionCandidateId.value = candidate._id
+    aiSuggestionError.value = null
 
     try {
       const result = await generateCrawledEventAiSuggestion(candidate._id, selectedSourceId.value)
       aiSuggestion.value = { candidateId: candidate._id, value: result.aiSuggestion }
     } catch (error) {
-      approvalError.value = error instanceof Error ? error.message : 'AI-forslaget kunne ikke genereres.'
+      aiSuggestionError.value = {
+        candidateId: candidate._id,
+        message: error instanceof Error ? error.message : 'AI-forslaget kunne ikke genereres.',
+      }
     } finally {
-      isGeneratingAiSuggestion.value = false
+      if (aiSuggestionCandidateId.value === candidate._id) aiSuggestionCandidateId.value = ''
     }
   }
 
@@ -278,6 +283,11 @@ export function useAdminCrawlerCandidates() {
     if (suggestion.shortDescription) approvalForm.value.description = suggestion.shortDescription
     if (suggestion.suggestedCategory) approvalForm.value.slugArray = [suggestion.suggestedCategory.toLowerCase()]
     if (suggestion.suggestedLocation && !approvalForm.value.address) approvalForm.value.address = suggestion.suggestedLocation
+  }
+
+  async function openApprovalWithAiSuggestion(candidate: CrawledEventCandidate): Promise<void> {
+    await openApproval(candidate)
+    applyAiSuggestion()
   }
 
   function toggleDuplicateComparison(candidate: CrawledEventCandidate, duplicateId: string): void {
@@ -369,6 +379,7 @@ export function useAdminCrawlerCandidates() {
     approvalForm,
     approvalError,
     aiSuggestion,
+    aiSuggestionError,
     applyAiSuggestion,
     comparisonDuplicate,
     activeCandidateId,
@@ -379,11 +390,12 @@ export function useAdminCrawlerCandidates() {
     isCrawling,
     isBulkApproving,
     isGeocoding,
-    isGeneratingAiSuggestion,
+    aiSuggestionCandidateId,
     isLoading,
     isComparingDuplicate,
     loadCandidates,
     openApproval,
+    openApprovalWithAiSuggestion,
     generateAiSuggestion,
     rejectCandidate,
     rejectCandidateAsDuplicate,
