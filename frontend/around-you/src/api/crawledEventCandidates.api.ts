@@ -113,6 +113,19 @@ export type CrawledEventBulkApprovalResult = CrawledEventBulkApprovalPreview & {
   failed: Array<{ title: string; source: string; message: string }>
 }
 
+export type CrawledEventAiSuggestion = {
+  shortDescription: string | null
+  suggestedCategory: string | null
+  suggestedLocation: string | null
+  missingOrUncertainFields: string[]
+  adminNote: string
+}
+
+export type CrawledEventAiSuggestionResponse = {
+  candidateId: string
+  aiSuggestion: CrawledEventAiSuggestion
+}
+
 export function fetchOplevEsbjergEventCandidates(
   status: CrawledEventCandidateStatus = 'new',
   sourceId = OPLEV_ESBJERG_SOURCE_ID,
@@ -155,6 +168,16 @@ export function rejectOplevEsbjergEventCandidate(id: string, reason: string, sou
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ reason }),
   })
+}
+
+export function generateCrawledEventAiSuggestion(
+  id: string,
+  sourceId = OPLEV_ESBJERG_SOURCE_ID,
+): Promise<CrawledEventAiSuggestionResponse> {
+  return apiRequest<CrawledEventAiSuggestionResponse>(
+    `/admin/crawler/events/${encodeURIComponent(id)}/ai-suggestion?source=${encodeURIComponent(sourceId)}`,
+    { method: 'POST', token: getAuthToken() },
+  )
 }
 
 export function fetchCrawlerEventSources(): Promise<CrawlerEventSource[]> {

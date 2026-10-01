@@ -6,6 +6,7 @@ import {
   crawlCrawlerEventCalendar,
   crawlOplevEsbjergEventCalendar,
   getCrawlerEventCandidates,
+  generateCrawlerEventCandidateSuggestion,
   getCrawlerEventImportStatus,
   getCrawlerEventSources,
   getCrawlerEventBulkApprovalPreview,
@@ -90,6 +91,15 @@ router.get(
   requireAdmin,
   requirePermission("admin:access"),
   getCrawlerEventCandidates,
+);
+
+router.post(
+  "/admin/crawler/events/:id/ai-suggestion",
+  verifyToken,
+  requireAdmin,
+  requirePermission("admin:access"),
+  adminMutationRateLimiter,
+  generateCrawlerEventCandidateSuggestion,
 );
 
 router.get(

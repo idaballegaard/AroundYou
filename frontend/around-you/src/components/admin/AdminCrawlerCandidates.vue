@@ -168,6 +168,7 @@
           <div class="flex shrink-0 flex-wrap gap-2">
             <a :href="candidate.sourceUrl" target="_blank" rel="noopener noreferrer" class="text-sm font-bold text-[#094b7b] underline underline-offset-2">Se kilde</a>
             <template v-if="activeStatus === 'new'">
+              <button type="button" class="rounded-md border border-[#094b7b] px-3 py-1.5 text-sm font-black text-[#094b7b] hover:bg-slate-50 disabled:opacity-60" :disabled="isGeneratingAiSuggestion || Boolean(activeCandidateId)" @click="generateAiSuggestion(candidate)">{{ isGeneratingAiSuggestion ? 'Laver AI-forslag...' : 'Få AI-forslag' }}</button>
               <button type="button" class="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-black text-white disabled:opacity-60" :disabled="Boolean(activeCandidateId)" @click="openApproval(candidate)">Godkend</button>
               <button v-if="candidate.possibleDuplicates.length" type="button" class="rounded-md border border-amber-500 px-3 py-1.5 text-sm font-black text-amber-900 hover:bg-amber-50 disabled:opacity-60" :disabled="Boolean(activeCandidateId)" @click="rejectCandidateAsDuplicate(candidate)">Afvis som dublet</button>
               <button type="button" class="rounded-md bg-rose-600 px-3 py-1.5 text-sm font-black text-white disabled:opacity-60" :disabled="Boolean(activeCandidateId)" @click="rejectCandidate(candidate._id)">Afvis</button>
@@ -186,6 +187,15 @@
               Dette ligner et event fra en anden kilde. Kontrollér det, før du publicerer.
             </p>
           </div>
+          <section v-if="aiSuggestion?.candidateId === candidate._id" class="rounded-md border border-[#094b7b] bg-blue-50 p-3 text-sm text-slate-800 sm:col-span-2">
+            <p class="font-black text-[#094b7b]">AI-forslag</p>
+            <p v-if="aiSuggestion.value.shortDescription" class="mt-1"><span class="font-bold">Beskrivelse:</span> {{ aiSuggestion.value.shortDescription }}</p>
+            <p v-if="aiSuggestion.value.suggestedCategory" class="mt-1"><span class="font-bold">Kategori:</span> {{ aiSuggestion.value.suggestedCategory }}</p>
+            <p v-if="aiSuggestion.value.suggestedLocation" class="mt-1"><span class="font-bold">Sted:</span> {{ aiSuggestion.value.suggestedLocation }}</p>
+            <p class="mt-1"><span class="font-bold">Note:</span> {{ aiSuggestion.value.adminNote }}</p>
+            <p v-if="aiSuggestion.value.missingOrUncertainFields.length" class="mt-1 text-xs text-slate-600">Usikre felter: {{ aiSuggestion.value.missingOrUncertainFields.join(', ') }}</p>
+            <button type="button" class="mt-3 rounded-md border border-[#094b7b] px-3 py-1.5 font-bold text-[#094b7b] hover:bg-white" @click="applyAiSuggestion">Brug forslag</button>
+          </section>
           <label class="grid gap-1 text-sm font-bold text-slate-700">Navn<input v-model.trim="approvalForm.name" required class="rounded-md border border-slate-300 px-3 py-2 font-normal" /></label>
           <label class="grid gap-1 text-sm font-bold text-slate-700">Pris i kr.<input v-model.number="approvalForm.price" required min="0" step="1" type="number" class="rounded-md border border-slate-300 px-3 py-2 font-normal" /></label>
           <label class="grid gap-1 text-sm font-bold text-slate-700 sm:col-span-2">Beskrivelse<textarea v-model.trim="approvalForm.description" required rows="3" class="rounded-md border border-slate-300 px-3 py-2 font-normal" /></label>
@@ -217,6 +227,8 @@ const {
   approvalCandidate,
   approvalForm,
   approvalError,
+  aiSuggestion,
+  applyAiSuggestion,
   approveCandidate,
   approveAllCompleteCandidates,
   candidates,
@@ -227,10 +239,12 @@ const {
   isCrawling,
   isBulkApproving,
   isGeocoding,
+  isGeneratingAiSuggestion,
   isLoading,
   isComparingDuplicate,
   loadCandidates,
   openApproval,
+  generateAiSuggestion,
   rejectCandidate,
   rejectCandidateAsDuplicate,
   runCrawler,

@@ -36,6 +36,8 @@ import {
 } from "../services/oplevEsbjergImportScheduler.service";
 import { getRouteParam, isValidationError } from "./controllerUtils";
 import { CrawledEventCandidateStatus } from "../interfaces/crawledEventCandidate";
+import { CrawledEventAiSuggestionError, generateCrawledEventAiSuggestion } from "../services/crawledEventAiSuggestion.service";
+import { SealabChatError } from "../services/sealabChat.service";
 
 function parseLimit(value: unknown): number | undefined {
   if (typeof value !== "string" || !value.trim()) {
@@ -197,6 +199,26 @@ export async function getCrawlerEventCandidates(
 
     console.error("Could not fetch crawled event candidates:", error);
     res.status(500).json({ message: "Eventkandidaterne kunne ikke hentes." });
+  }
+}
+
+export async function generateCrawlerEventCandidateSuggestion(req: Request, res: Response): Promise<void> {
+  try {
+    const source = getRequestedCrawlerSource(req.query.source);
+    res.status(200).json(
+      await generateCrawledEventAiSuggestion(getRouteParam(req.params.id), source.candidateSource),
+    );
+  } catch (error) {
+    if (error instanceof CrawlerSourceNotFoundError) {
+      res.status(404).json({ message: error.message });
+      return;
+    }
+    if (error instanceof CrawledEventAiSuggestionError || error instanceof SealabChatError) {
+      res.status(error.statusCode).json({ message: error.message });
+      return;
+    }
+    console.error("Could not generate crawled event AI suggestion:", error);
+    res.status(502).json({ message: "AI-forslaget kunne ikke genereres." });
   }
 }
 
